@@ -80,18 +80,49 @@ textarea {
   resize: vertical;
 }
 
+.status-box {
+  border: 1px solid #2a3038;
+  background: #0f1013;
+  padding: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .button {
   display: inline-flex;
-  margin-top: 16px;
+  align-items: center;
+  justify-content: center;
   border: 1px solid #3a424d;
   background: #1f2329;
   color: #e6ebf2;
   padding: 10px 14px;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .button:hover {
   border-color: #4fd18b;
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.button-primary {
+  background: #2f7d55;
+  border-color: #4fd18b;
+  color: #f5fff9;
+  font-weight: 700;
+}
+
+p + .button {
+  margin-top: 16px;
 }
 
 @media (max-width: 560px) {

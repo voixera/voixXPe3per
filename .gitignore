@@ -12,6 +12,11 @@ android/build/
 android/app/build/
 android/local.properties
 
+# iOS
+ios/build/
+ios/DerivedData/
+ios/*.xcodeproj/
+
 # OS/editor
 .DS_Store
 Thumbs.db

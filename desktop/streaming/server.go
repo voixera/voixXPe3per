@@ -214,6 +214,9 @@ func (s *Server) handleText(sendJSON func(any) error, payload []byte, currentDev
 			Name:           message.Device.Name,
 			Model:          message.Device.Model,
 			Manufacturer:   message.Device.Manufacturer,
+			Platform:       message.Device.Platform,
+			OSName:         message.Device.OSName,
+			OSVersion:      message.Device.OSVersion,
 			AndroidVersion: message.Device.AndroidVersion,
 		})
 		if err != nil {

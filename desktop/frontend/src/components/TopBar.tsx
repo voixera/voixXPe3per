@@ -20,14 +20,17 @@ export function TopBar({
         </div>
         <div>
           <h1 className="text-sm font-semibold leading-4 text-slate-100">voiXPe3per</h1>
-          <p className="text-[11px] text-slate-500">LAN phone mirror console</p>
+          <p className="text-[11px] text-slate-500">Android and iOS mirror console</p>
         </div>
       </div>
 
       <div className="flex items-center gap-5 text-sm">
         <div className="hidden min-w-[190px] text-right md:block">
           <p className="truncate text-slate-200">{connectedDevice?.name ?? "No device connected"}</p>
-          <p className="text-[11px] text-slate-500">{metrics.resolution || "Auto"} stream</p>
+          <p className="text-[11px] text-slate-500">
+            {connectedDevice ? `${connectedDevice.osName || connectedDevice.platform} ` : ""}
+            {metrics.resolution || "Auto"} stream
+          </p>
         </div>
         <StatusPill status={connectedDevice ? "connected" : "offline"} />
         <button

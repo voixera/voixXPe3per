@@ -9,6 +9,9 @@ data class LocalDevice(
     val name: String,
     val model: String,
     val manufacturer: String,
+    val platform: String,
+    val osName: String,
+    val osVersion: String,
     val androidVersion: String
 )
 
@@ -25,6 +28,9 @@ class DeviceIdentity(context: Context) {
             name = "${Build.MANUFACTURER} ${Build.MODEL}",
             model = Build.MODEL ?: "Android",
             manufacturer = Build.MANUFACTURER ?: "Android",
+            platform = "android",
+            osName = "Android",
+            osVersion = Build.VERSION.RELEASE ?: "unknown",
             androidVersion = Build.VERSION.RELEASE ?: "unknown"
         )
     }

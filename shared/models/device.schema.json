@@ -1,14 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://local.voixpe3per/models/device.schema.json",
-  "title": "Android Device",
+  "title": "Mobile Device",
   "type": "object",
-  "required": ["id", "name", "model", "manufacturer", "androidVersion"],
+  "required": ["id", "name", "model", "manufacturer"],
   "properties": {
     "id": { "type": "string", "minLength": 1 },
     "name": { "type": "string", "minLength": 1 },
     "model": { "type": "string" },
     "manufacturer": { "type": "string" },
+    "platform": { "enum": ["android", "ios", "web"] },
+    "osName": { "type": "string" },
+    "osVersion": { "type": "string" },
     "androidVersion": { "type": "string" }
   }
 }

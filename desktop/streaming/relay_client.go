@@ -96,7 +96,7 @@ func (c *RelayClient) readLoop(conn *websocket.Conn) {
 
 		switch messageType {
 		case websocket.TextMessage:
-			if isRelayControl(payload) {
+			if c.handleRelayControl(payload) {
 				continue
 			}
 			c.deviceID = c.server.HandlePeerText(c.writeJSON, payload, c.deviceID)
@@ -115,10 +115,17 @@ func (c *RelayClient) writeJSON(v any) error {
 	return c.conn.WriteJSON(v)
 }
 
-func isRelayControl(payload []byte) bool {
+func (c *RelayClient) handleRelayControl(payload []byte) bool {
 	var envelope Envelope
 	if err := json.Unmarshal(payload, &envelope); err != nil {
 		return false
 	}
-	return strings.HasPrefix(envelope.Type, "relay.")
+	if !strings.HasPrefix(envelope.Type, "relay.") {
+		return false
+	}
+	if envelope.Type == "relay.peer_left" && c.deviceID != "" {
+		c.server.DisconnectDevice(c.deviceID)
+		c.deviceID = ""
+	}
+	return true
 }

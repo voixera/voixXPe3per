@@ -161,7 +161,7 @@ func (s *Service) VerifyPairing(token string, handshake DeviceHandshake) (PairSu
 		if err != nil {
 			return PairSuccess{}, err
 		}
-		deviceID = "android-" + generated
+		deviceID = platform(handshake) + "-" + generated
 	}
 
 	trustSecret, err := randomToken(48)
@@ -171,10 +171,13 @@ func (s *Service) VerifyPairing(token string, handshake DeviceHandshake) (PairSu
 
 	device := trustedDevice{
 		ID:              deviceID,
-		Name:            fallback(handshake.Name, handshake.Model, "Android Device"),
+		Name:            fallback(handshake.Name, handshake.Model, "Mobile Device"),
 		Model:           fallback(handshake.Model, "Unknown Model"),
-		Manufacturer:    fallback(handshake.Manufacturer, "Android"),
-		AndroidVersion:  fallback(handshake.AndroidVersion, "unknown"),
+		Manufacturer:    fallback(handshake.Manufacturer, "Unknown"),
+		Platform:        platform(handshake),
+		OSName:          osName(handshake),
+		OSVersion:       osVersion(handshake),
+		AndroidVersion:  fallback(handshake.AndroidVersion, handshake.OSVersion, "unknown"),
 		Status:          DeviceConnected,
 		LastSeen:        time.Now().UTC(),
 		TrustSecretHash: hashSecret(trustSecret),
@@ -268,6 +271,9 @@ func toView(device trustedDevice) DeviceView {
 		Name:           device.Name,
 		Model:          device.Model,
 		Manufacturer:   device.Manufacturer,
+		Platform:       fallback(device.Platform, "android"),
+		OSName:         fallback(device.OSName, "Android"),
+		OSVersion:      fallback(device.OSVersion, device.AndroidVersion, "unknown"),
 		AndroidVersion: device.AndroidVersion,
 		Status:         device.Status,
 		LastSeen:       device.LastSeen,
@@ -330,6 +336,31 @@ func randomRoom() (string, error) {
 func hashSecret(secret string) string {
 	sum := sha256.Sum256([]byte(secret))
 	return hex.EncodeToString(sum[:])
+}
+
+func platform(handshake DeviceHandshake) string {
+	value := strings.ToLower(strings.TrimSpace(handshake.Platform))
+	if value != "" {
+		return value
+	}
+	if strings.Contains(strings.ToLower(handshake.Manufacturer), "apple") {
+		return "ios"
+	}
+	return "android"
+}
+
+func osName(handshake DeviceHandshake) string {
+	if strings.TrimSpace(handshake.OSName) != "" {
+		return handshake.OSName
+	}
+	if platform(handshake) == "ios" {
+		return "iOS"
+	}
+	return "Android"
+}
+
+func osVersion(handshake DeviceHandshake) string {
+	return fallback(handshake.OSVersion, handshake.AndroidVersion, "unknown")
 }
 
 func fallback(values ...string) string {

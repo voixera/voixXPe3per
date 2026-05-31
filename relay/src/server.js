@@ -58,7 +58,7 @@ function maybeHandleControl(socket, data) {
 
   const room = String(message.room ?? "").trim().toUpperCase();
   const role = String(message.role ?? "").trim().toLowerCase();
-  if (!room || !["desktop", "android"].includes(role)) {
+  if (!room || !["desktop", "android", "ios", "web"].includes(role)) {
     socket.send(JSON.stringify({ type: "relay.error", message: "invalid relay.join" }));
     return true;
   }

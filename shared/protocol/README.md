@@ -1,6 +1,6 @@
 # voiXPe3per Local Protocol
 
-voiXPe3per supports two transports. The default is global relay mode, so Android and desktop do not need to be on the same WiFi.
+voiXPe3per supports two transports. The default is global relay mode, so Android/iOS and desktop do not need to be on the same WiFi.
 
 Global relay endpoint:
 
@@ -39,7 +39,7 @@ The LAN QR payload:
 
 ## Pairing
 
-Android sends `pair.verify` after scanning the QR. In relay mode, the relay room replaces the local LAN token:
+Android, iOS, or the Vercel web pairing page sends `pair.verify` after scanning the QR. In relay mode, the relay room replaces the local LAN token:
 
 ```json
 {
@@ -51,6 +51,9 @@ Android sends `pair.verify` after scanning the QR. In relay mode, the relay room
     "name": "Samsung Galaxy A55",
     "model": "Galaxy A55",
     "manufacturer": "Samsung",
+    "platform": "android",
+    "osName": "Android",
+    "osVersion": "14",
     "androidVersion": "14"
   },
   "capabilities": {
@@ -60,11 +63,36 @@ Android sends `pair.verify` after scanning the QR. In relay mode, the relay room
 }
 ```
 
-Desktop replies with `pair.success` and returns a `trustSecret`. Android stores it in private app storage. Desktop stores only a SHA-256 hash in the user config folder.
+Desktop replies with `pair.success` and returns a `trustSecret`. Android stores it in private app storage, iOS stores it in Keychain, and desktop stores only a SHA-256 hash in the user config folder.
+
+The Vercel web pairing page stores its browser identity and `trustSecret` in `localStorage`. This keeps the "scan QR, click Izinkan pairing" flow app-free for iOS Camera and mobile browsers.
+
+iOS uses the same message shape with `"platform": "ios"`:
+
+```json
+{
+  "type": "pair.verify",
+  "token": "",
+  "room": "A1B2C3D4E5F6",
+  "device": {
+    "id": "ios-device-uuid",
+    "name": "Faisal's iPhone",
+    "model": "iPhone",
+    "manufacturer": "Apple",
+    "platform": "ios",
+    "osName": "iOS",
+    "osVersion": "18.5"
+  },
+  "capabilities": {
+    "encoder": "h264",
+    "maxFps": 60
+  }
+}
+```
 
 ## Reconnect
 
-Android reconnects without a QR scan:
+Android and iOS reconnect without a QR scan:
 
 ```json
 {

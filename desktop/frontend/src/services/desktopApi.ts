@@ -17,6 +17,9 @@ const emptySnapshot: DesktopSnapshot = {
       name: "Samsung Galaxy A55",
       model: "Galaxy A55",
       manufacturer: "Samsung",
+      platform: "android",
+      osName: "Android",
+      osVersion: "14",
       androidVersion: "14",
       status: "offline",
       lastSeen: new Date().toISOString()

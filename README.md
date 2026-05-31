@@ -1,6 +1,6 @@
 # voiXPe3per
 
-voiXPe3per adalah starter project untuk mirroring layar Android ke desktop Windows. Mode default sekarang memakai relay WebSocket publik, jadi Android dan desktop tidak harus berada di jaringan WiFi/LAN yang sama. Desktop menampilkan QR pairing, Android scan QR, lalu H264 frames dikirim melalui relay.
+voiXPe3per adalah starter project untuk mirroring layar Android/iOS ke desktop Windows. Mode default sekarang memakai relay WebSocket publik, jadi mobile device dan desktop tidak harus berada di jaringan WiFi/LAN yang sama. Desktop menampilkan QR pairing, browser mobile membuka halaman Vercel, lalu user cukup klik `Izinkan pairing`.
 
 ## Struktur
 
@@ -8,6 +8,8 @@ voiXPe3per adalah starter project untuk mirroring layar Android ke desktop Windo
 phone-mirror/
   desktop/   Wails v2 + Go backend + React/TypeScript/Tailwind UI
   android/   Kotlin Android app, ZXing QR scanner, MediaProjection, H264 encoder
+  ios/       Optional SwiftUI native client untuk pengembangan lanjutan
+  web/       Vercel pairing page tanpa install aplikasi
   shared/    Protocol docs, JSON schema, shared model contracts
   scripts/   Build helpers
 ```
@@ -68,7 +70,19 @@ $env:VOIXPE3PER_PAIRING_PAGE_URL="https://voixxpe3per.vercel.app/pair"
 voiXPe3per.exe
 ```
 
-QR Code sengaja dibuat sebagai URL halaman pairing, bukan JSON mentah. Ini membuat iOS Camera membuka halaman pairing, sementara aplikasi Android tetap bisa membaca parameter pairing dari URL yang sama.
+QR Code sengaja dibuat sebagai URL halaman pairing, bukan JSON mentah. Ini membuat iOS Camera membuka halaman Vercel, lalu pairing bisa dilakukan langsung dari browser dengan tombol `Izinkan pairing`.
+
+## Web pairing tanpa install aplikasi
+
+Flow paling sederhana:
+
+1. Buka EXE desktop.
+2. Scan QR memakai kamera iOS/Android.
+3. Browser masuk ke halaman Vercel `/pair`.
+4. Tekan `Izinkan pairing`.
+5. Desktop menyimpan browser/mobile sebagai trusted device.
+
+Halaman Vercel hanya bisa pairing lewat relay `wss://...` publik. Vercel dipakai sebagai UI pairing statis; WebSocket relay tetap harus berjalan di host yang mendukung koneksi WebSocket persisten.
 
 Untuk development relay lokal:
 
@@ -104,6 +118,40 @@ Android flow:
 7. Kirim frame binary ke desktop.
 
 Reconnect trusted device memakai `device.reconnect`, jadi scan QR hanya diperlukan untuk pairing pertama.
+
+## iOS Native Optional
+
+Prerequisite:
+
+- macOS dengan Xcode 15+
+- XcodeGen (`brew install xcodegen`)
+- iPhone/iPad iOS 16+
+
+Generate project dan build:
+
+```bash
+cd phone-mirror/ios
+xcodegen generate
+open voiXPe3per.xcodeproj
+```
+
+Atau:
+
+```bash
+cd phone-mirror
+./scripts/build-ios.sh
+```
+
+iOS native flow:
+
+1. Scan QR dari desktop memakai app iOS voiXPe3per.
+2. Connect ke relay/LAN WebSocket.
+3. Join room relay sebagai role `ios`.
+4. Kirim `pair.verify` dengan identity iOS.
+5. Simpan `trustSecret` di Keychain.
+6. Reconnect memakai `device.reconnect` tanpa scan ulang.
+
+Catatan: pairing iOS sudah tersedia. Live screen mirroring iOS membutuhkan ReplayKit Broadcast Upload Extension karena iOS tidak mengizinkan app biasa menangkap layar penuh secara langsung seperti Android MediaProjection.
 
 ## Catatan V1
 

@@ -14,6 +14,9 @@ type DeviceIdentity struct {
 	Name           string `json:"name"`
 	Model          string `json:"model"`
 	Manufacturer   string `json:"manufacturer"`
+	Platform       string `json:"platform"`
+	OSName         string `json:"osName"`
+	OSVersion      string `json:"osVersion"`
 	AndroidVersion string `json:"androidVersion"`
 }
 

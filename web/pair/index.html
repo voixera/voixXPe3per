@@ -9,7 +9,7 @@
   <body>
     <main class="shell">
       <section class="panel">
-        <p class="eyebrow">Pairing room</p>
+        <p class="eyebrow">voiXPe3per Web Pairing</p>
         <h1 id="room">-</h1>
         <p id="summary">Membaca payload pairing...</p>
 
@@ -24,8 +24,13 @@
           </div>
         </div>
 
-        <textarea id="payload" readonly></textarea>
-        <button class="button" id="copy" type="button">Copy payload</button>
+        <div class="status-box">
+          <span>Status</span>
+          <strong id="status">Siap pairing</strong>
+        </div>
+        <div class="actions">
+          <button class="button button-primary" id="allow" type="button">Izinkan pairing</button>
+        </div>
       </section>
     </main>
     <script>
@@ -38,18 +43,189 @@
         port: Number(params.get("port") || 8080),
         token: params.get("token") || ""
       };
+      const statusEl = document.getElementById("status");
+      const allowButton = document.getElementById("allow");
+      const identityKey = "voixpe3per.web.identity";
+      const trustedKey = "voixpe3per.web.trusted";
+      let socket = null;
+      let pairTimer = null;
+      let pairingDone = false;
 
       document.getElementById("room").textContent = payload.room || "No room";
       document.getElementById("mode").textContent = payload.mode;
       document.getElementById("relay").textContent = payload.relay || `${payload.host}:${payload.port}`;
       document.getElementById("summary").textContent =
         payload.mode === "relay"
-          ? "Gunakan aplikasi Android voiXPe3per untuk scan QR dari desktop. iOS Camera menampilkan halaman ini karena QR sekarang berupa URL."
-          : "Mode LAN lama. Android bisa membaca payload dari URL ini.";
-      document.getElementById("payload").value = JSON.stringify(payload, null, 2);
-      document.getElementById("copy").addEventListener("click", async () => {
-        await navigator.clipboard.writeText(JSON.stringify(payload));
-      });
+          ? "Klik Izinkan pairing untuk menghubungkan browser ini ke desktop. Tidak perlu install aplikasi tambahan."
+          : "Mode LAN tidak bisa dijamin dari halaman HTTPS Vercel. Gunakan relay WSS publik agar pairing web berjalan.";
+
+      allowButton.addEventListener("click", allowPairing);
+
+      function allowPairing() {
+        pairingDone = false;
+        allowButton.disabled = true;
+        setStatus("Menghubungkan ke desktop...");
+
+        let wsUrl;
+        try {
+          wsUrl = websocketUrl(payload);
+        } catch (error) {
+          setFailed(error.message);
+          return;
+        }
+
+        socket = new WebSocket(wsUrl);
+        socket.addEventListener("open", () => {
+          setStatus("Menunggu desktop menerima pairing...");
+          if (payload.mode === "relay") {
+            socket.send(JSON.stringify({ type: "relay.join", role: "web", room: payload.room }));
+          }
+          sendPairVerify();
+          pairTimer = window.setInterval(sendPairVerify, 2000);
+        });
+        socket.addEventListener("message", (event) => {
+          let message;
+          try {
+            message = JSON.parse(event.data);
+          } catch {
+            return;
+          }
+
+          if (message.type === "pair.success") {
+            pairingDone = true;
+            window.clearInterval(pairTimer);
+            localStorage.setItem(
+              trustedKey,
+              JSON.stringify({
+                mode: payload.mode,
+                host: payload.host,
+                port: payload.port,
+                relay: payload.relay,
+                room: payload.room,
+                deviceId: message.deviceId,
+                trustSecret: message.trustSecret
+              })
+            );
+            setStatus("Pairing berhasil. Browser ini sudah menjadi trusted device.");
+            allowButton.textContent = "Pairing berhasil";
+            return;
+          }
+
+          if (message.type === "pair.failed" || message.type === "error" || message.type === "relay.error") {
+            setFailed(message.message || "Pairing gagal");
+          }
+        });
+        socket.addEventListener("close", () => {
+          window.clearInterval(pairTimer);
+          if (!pairingDone) {
+            setFailed("Koneksi pairing terputus");
+          }
+        });
+        socket.addEventListener("error", () => {
+          setFailed("Tidak bisa connect ke relay. Pastikan QR memakai relay wss publik.");
+        });
+      }
+
+      function sendPairVerify() {
+        if (!socket || socket.readyState !== WebSocket.OPEN || pairingDone) {
+          return;
+        }
+
+        socket.send(
+          JSON.stringify({
+            type: "pair.verify",
+            token: payload.token,
+            room: payload.room,
+            device: deviceIdentity(),
+            capabilities: {
+              encoder: "h264",
+              maxFps: 60
+            }
+          })
+        );
+      }
+
+      function websocketUrl(data) {
+        const url = data.mode === "relay" ? data.relay : `ws://${data.host}:${data.port}/ws`;
+        if (!url) {
+          throw new Error("Payload QR tidak punya alamat relay.");
+        }
+        if (window.location.protocol === "https:" && url.startsWith("ws://")) {
+          throw new Error("Halaman Vercel membutuhkan relay wss:// publik, bukan ws:// lokal.");
+        }
+        return url;
+      }
+
+      function deviceIdentity() {
+        const existing = loadJSON(identityKey);
+        const detected = detectDevice();
+        const id = existing?.id || `${detected.platform}-web-${randomId()}`;
+        const identity = {
+          id,
+          name: detected.name,
+          model: detected.model,
+          manufacturer: detected.manufacturer,
+          platform: detected.platform,
+          osName: detected.osName,
+          osVersion: detected.osVersion
+        };
+        localStorage.setItem(identityKey, JSON.stringify(identity));
+        return identity;
+      }
+
+      function detectDevice() {
+        const ua = navigator.userAgent || "";
+        const isiPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+        const isiOS = /iPad|iPhone|iPod/.test(ua) || isiPadOS;
+        const osMatch = ua.match(/OS ([0-9_]+)/);
+        const browser = /CriOS/.test(ua) ? "Chrome" : /FxiOS/.test(ua) ? "Firefox" : "Safari";
+
+        if (isiOS) {
+          const model = /iPad/.test(ua) || isiPadOS ? "iPad" : "iPhone";
+          return {
+            name: `${model} ${browser}`,
+            model,
+            manufacturer: "Apple",
+            platform: "ios",
+            osName: "iOS",
+            osVersion: osMatch ? osMatch[1].replaceAll("_", ".") : "unknown"
+          };
+        }
+
+        return {
+          name: "Web Browser",
+          model: navigator.platform || "Browser",
+          manufacturer: "Web",
+          platform: "web",
+          osName: "Web",
+          osVersion: "unknown"
+        };
+      }
+
+      function setStatus(message) {
+        statusEl.textContent = message;
+      }
+
+      function setFailed(message) {
+        window.clearInterval(pairTimer);
+        allowButton.disabled = false;
+        setStatus(message);
+      }
+
+      function loadJSON(key) {
+        try {
+          return JSON.parse(localStorage.getItem(key) || "null");
+        } catch {
+          return null;
+        }
+      }
+
+      function randomId() {
+        if (crypto.randomUUID) {
+          return crypto.randomUUID();
+        }
+        return Math.random().toString(36).slice(2) + Date.now().toString(36);
+      }
     </script>
   </body>
 </html>

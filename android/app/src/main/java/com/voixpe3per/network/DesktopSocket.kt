@@ -97,6 +97,9 @@ class DesktopSocket {
             .put("name", identity.name)
             .put("model", identity.model)
             .put("manufacturer", identity.manufacturer)
+            .put("platform", identity.platform)
+            .put("osName", identity.osName)
+            .put("osVersion", identity.osVersion)
             .put("androidVersion", identity.androidVersion)
 
         val capabilities = JSONObject()

@@ -5,6 +5,9 @@ export interface DeviceIdentity {
   name: string;
   model: string;
   manufacturer: string;
+  platform: "android" | "ios" | "web" | string;
+  osName: string;
+  osVersion: string;
   androidVersion: string;
 }
 

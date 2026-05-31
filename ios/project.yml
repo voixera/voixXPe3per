@@ -1,0 +1,32 @@
+name: voiXPe3per
+options:
+  bundleIdPrefix: com.voixpe3per
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  voiXPe3per:
+    type: application
+    platform: iOS
+    sources:
+      - voiXPe3per
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.voixpe3per.ios
+        INFOPLIST_FILE: voiXPe3per/Info.plist
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    info:
+      path: voiXPe3per/Info.plist
+      properties:
+        CFBundleDisplayName: voiXPe3per
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        NSCameraUsageDescription: "Camera dipakai untuk scan QR pairing voiXPe3per dari desktop."
+        NSLocalNetworkUsageDescription: "voiXPe3per memakai jaringan lokal saat pairing LAN."
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        CFBundleURLTypes:
+          - CFBundleURLName: com.voixpe3per.ios
+            CFBundleURLSchemes:
+              - voixpe3per
