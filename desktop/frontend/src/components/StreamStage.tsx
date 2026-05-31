@@ -18,6 +18,8 @@ export function StreamStage({
   const renderer = useMemo(() => new H264Renderer(), []);
   const { actions } = useAppState();
 
+  const isPairingOnly = !device.streamCapable;
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) {
@@ -49,37 +51,51 @@ export function StreamStage({
             <StatusPill status="connected" />
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            {device.manufacturer} {device.model} | Android {device.androidVersion}
+            {device.manufacturer} {device.model} | {device.osName || device.platform}{" "}
+            {device.osVersion || device.androidVersion}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="toolbar-button" type="button" onClick={() => void actions.refreshStream()}>
-            <RotateCw size={15} />
-            Refresh
-          </button>
-          <button className="toolbar-button" type="button" onClick={() => void actions.toggleFullscreen()}>
-            <MonitorUp size={15} />
-            Fullscreen
-          </button>
-        </div>
+        {!isPairingOnly && (
+          <div className="flex gap-2">
+            <button className="toolbar-button" type="button" onClick={() => void actions.refreshStream()}>
+              <RotateCw size={15} />
+              Refresh
+            </button>
+            <button className="toolbar-button" type="button" onClick={() => void actions.toggleFullscreen()}>
+              <MonitorUp size={15} />
+              Fullscreen
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="relative flex-1 bg-[#08090b]">
-        {!frame && (
+        {isPairingOnly ? (
+          <div className="absolute inset-0 z-10 grid place-items-center bg-black/25 text-center">
+            <div className="max-w-md px-6">
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-signal-green">Pairing web berhasil</p>
+              <h3 className="mt-3 text-xl font-semibold text-slate-100">Browser tidak bisa mengirim layar H264</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                iOS/Android browser hanya dipakai untuk pairing tanpa install. Browser mobile tidak punya akses untuk
+                capture seluruh layar dan encode H264 realtime seperti MediaProjection atau ReplayKit.
+              </p>
+            </div>
+          </div>
+        ) : !frame ? (
           <div className="absolute inset-0 z-10 grid place-items-center bg-black/25 text-center">
             <div className="stream-loader">
               <div className="mx-auto mb-4 h-10 w-10 animate-spin border-2 border-shell-600 border-t-signal-green" />
               <p className="font-mono text-xs uppercase tracking-[0.2em] text-slate-400">Waiting for H264 frames</p>
             </div>
           </div>
-        )}
+        ) : null}
         <canvas ref={canvasRef} className="h-full w-full" />
       </div>
 
       <footer className="flex h-[42px] items-center justify-between border-t border-black/50 bg-shell-850 px-5 font-mono text-xs text-slate-400">
         <span>FPS {metrics.fps}</span>
         <span>{metrics.codec || "H264"}</span>
-        <span>{metrics.transport || "WiFi Local"}</span>
+        <span>{metrics.transport || "Public WSS"}</span>
         <span>{metrics.latencyMs}ms</span>
         <span>{metrics.frames} frames</span>
       </footer>

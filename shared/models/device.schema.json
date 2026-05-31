@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://local.voixpe3per/models/device.schema.json",
+  "$id": "https://voixpe3per.dev/models/device.schema.json",
   "title": "Mobile Device",
   "type": "object",
   "required": ["id", "name", "model", "manufacturer"],
@@ -12,6 +12,7 @@
     "platform": { "enum": ["android", "ios", "web"] },
     "osName": { "type": "string" },
     "osVersion": { "type": "string" },
-    "androidVersion": { "type": "string" }
+    "androidVersion": { "type": "string" },
+    "streamCapable": { "type": "boolean" }
   }
 }

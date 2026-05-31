@@ -8,7 +8,7 @@ object FramePacket {
     private const val headerSize = 12
     private const val keyFrameFlag = 1
 
-    fun wrap(encoded: ByteArray, keyFrame: Boolean, timestampNs: Long = System.nanoTime()): ByteString {
+    fun wrap(encoded: ByteArray, keyFrame: Boolean, timestampNs: Long = System.currentTimeMillis() * 1_000_000L): ByteString {
         val buffer = ByteBuffer.allocate(headerSize + encoded.size).order(ByteOrder.BIG_ENDIAN)
         buffer.put('V'.code.toByte())
         buffer.put('X'.code.toByte())

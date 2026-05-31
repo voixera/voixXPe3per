@@ -9,10 +9,11 @@ export interface DeviceIdentity {
   osName: string;
   osVersion: string;
   androidVersion: string;
+  streamCapable: boolean;
 }
 
 export interface PairingPayload {
-  mode: "relay" | "direct" | "lan" | string;
+  mode: "relay" | "direct" | string;
   host?: string;
   port?: number;
   token?: string;
@@ -29,7 +30,7 @@ export interface TrustedDevice extends DeviceIdentity {
 export interface StreamMetrics {
   fps: number;
   codec: "H264";
-  transport: "WiFi Local";
+  transport: "Public WSS";
   latencyMs: number;
   frames: number;
   resolution: string;

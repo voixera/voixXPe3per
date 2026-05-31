@@ -13,13 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"voixpe3per/desktop/network"
-
 	qrcode "github.com/skip2/go-qrcode"
 )
 
 const (
-	ModeLAN    = "lan"
 	ModeRelay  = "relay"
 	ModeDirect = "direct"
 
@@ -28,7 +25,6 @@ const (
 )
 
 type Service struct {
-	lan   *network.LANDetector
 	store Store
 	port  int
 
@@ -37,9 +33,8 @@ type Service struct {
 	devices map[string]trustedDevice
 }
 
-func NewService(lan *network.LANDetector, store Store, port int) *Service {
+func NewService(store Store, port int) *Service {
 	service := &Service{
-		lan:     lan,
 		store:   store,
 		port:    port,
 		devices: make(map[string]trustedDevice),
@@ -52,57 +47,12 @@ func (s *Service) StartSession() error {
 	publicURL := strings.TrimSpace(os.Getenv("VOIXPE3PER_PUBLIC_WS_URL"))
 	relayURL := strings.TrimSpace(os.Getenv("VOIXPE3PER_RELAY_URL"))
 	mode := strings.ToLower(strings.TrimSpace(os.Getenv("VOIXPE3PER_PAIRING_MODE")))
-	if mode == "" && publicURL != "" {
-		mode = ModeDirect
-	}
-	if mode == "" && relayURL != "" {
-		mode = ModeRelay
-	}
-	if mode == "" {
-		mode = ModeRelay
-	}
 
-	if mode == ModeDirect {
+	if mode == ModeDirect || (mode == "" && publicURL != "") {
 		return s.startDirectSession(publicURL)
 	}
 
-	if mode == ModeRelay {
-		return s.startRelaySession(relayURL)
-	}
-
-	host, err := s.lan.LocalIPv4()
-	if err != nil {
-		host = "127.0.0.1"
-	}
-
-	token, err := randomToken(32)
-	if err != nil {
-		return err
-	}
-
-	payload := PairingPayload{
-		Mode:  ModeLAN,
-		Host:  host,
-		Port:  s.port,
-		Token: token,
-	}
-	qrTarget := pairingURL(payload)
-	png, err := qrcode.Encode(qrTarget, qrcode.Medium, 384)
-	if err != nil {
-		return err
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.session = SessionSnapshot{
-		Host:      host,
-		Port:      s.port,
-		Token:     token,
-		Mode:      ModeLAN,
-		QRDataURL: "data:image/png;base64," + base64.StdEncoding.EncodeToString(png),
-		Status:    "Waiting for device...",
-	}
-	return nil
+	return s.startRelaySession(relayURL)
 }
 
 func (s *Service) startDirectSession(publicURL string) error {
@@ -222,6 +172,7 @@ func (s *Service) VerifyPairing(token string, handshake DeviceHandshake) (PairSu
 		OSName:          osName(handshake),
 		OSVersion:       osVersion(handshake),
 		AndroidVersion:  fallback(handshake.AndroidVersion, handshake.OSVersion, "unknown"),
+		StreamCapable:   handshake.StreamCapable,
 		Status:          DeviceConnected,
 		LastSeen:        time.Now().UTC(),
 		TrustSecretHash: hashSecret(trustSecret),
@@ -319,6 +270,7 @@ func toView(device trustedDevice) DeviceView {
 		OSName:         fallback(device.OSName, "Android"),
 		OSVersion:      fallback(device.OSVersion, device.AndroidVersion, "unknown"),
 		AndroidVersion: device.AndroidVersion,
+		StreamCapable:  isStreamCapable(device),
 		Status:         device.Status,
 		LastSeen:       device.LastSeen,
 	}
@@ -408,6 +360,13 @@ func osName(handshake DeviceHandshake) string {
 
 func osVersion(handshake DeviceHandshake) string {
 	return fallback(handshake.OSVersion, handshake.AndroidVersion, "unknown")
+}
+
+func isStreamCapable(device trustedDevice) bool {
+	if device.StreamCapable {
+		return true
+	}
+	return fallback(device.Platform, "android") != "web"
 }
 
 func fallback(values ...string) string {

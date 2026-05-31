@@ -23,8 +23,14 @@ class DesktopSocket {
         onPaired: (TrustedDesktop, WebSocket) -> Unit,
         onError: (String) -> Unit
     ) {
+        val url = payload.url
+        if (url.isBlank()) {
+            onError("QR harus memakai WSS publik")
+            return
+        }
+
         val request = Request.Builder()
-            .url(payload.url)
+            .url(url)
             .build()
 
         client.newWebSocket(request, object : WebSocketListener() {
@@ -49,6 +55,7 @@ class DesktopSocket {
                         )
                         onPaired(trusted, webSocket)
                     }
+                    "stream.request_keyframe" -> SocketRegistry.requestKeyframe()
                     "pair.failed", "error" -> onError(json.optString("message", "pairing failed"))
                 }
             }
@@ -64,8 +71,14 @@ class DesktopSocket {
         onConnected: (WebSocket) -> Unit,
         onError: (String) -> Unit
     ) {
+        val url = trusted.url
+        if (url.isBlank()) {
+            onError("trusted desktop belum punya WSS publik")
+            return
+        }
+
         val request = Request.Builder()
-            .url(trusted.url)
+            .url(url)
             .build()
 
         client.newWebSocket(request, object : WebSocketListener() {
@@ -82,6 +95,7 @@ class DesktopSocket {
                 val json = JSONObject(text)
                 when (json.optString("type")) {
                     "reconnect.success" -> onConnected(webSocket)
+                    "stream.request_keyframe" -> SocketRegistry.requestKeyframe()
                     "reconnect.failed", "error" -> onError(json.optString("message", "reconnect failed"))
                 }
             }

@@ -1,6 +1,6 @@
-# voiXPe3per Local Protocol
+# voiXPe3per Public Protocol
 
-voiXPe3per supports two transports. The default is global relay mode, so Android/iOS and desktop do not need to be on the same WiFi.
+voiXPe3per uses public WSS transports so Android/iOS and desktop do not need to be on the same WiFi.
 
 Global relay endpoint:
 
@@ -15,12 +15,6 @@ wss://<trycloudflare-or-public-host>/ws
 ```
 
 The relay is a dumb room forwarder. It does not know device trust secrets and only forwards packets between peers in the same room.
-
-Legacy LAN endpoint:
-
-```text
-ws://<desktop-lan-ip>:8080/ws
-```
 
 The relay QR payload:
 
@@ -43,20 +37,9 @@ The direct public WSS payload:
 }
 ```
 
-The LAN QR payload:
-
-```json
-{
-  "mode": "lan",
-  "host": "192.168.x.x",
-  "port": 8080,
-  "token": "generated_token"
-}
-```
-
 ## Pairing
 
-Android, iOS, or the Vercel web pairing page sends `pair.verify` after scanning the QR. In relay mode, the relay room replaces the local LAN token:
+Android, iOS, or the Vercel web pairing page sends `pair.verify` after scanning the QR. In relay mode, the relay room replaces a direct token:
 
 ```json
 {
@@ -83,6 +66,7 @@ Android, iOS, or the Vercel web pairing page sends `pair.verify` after scanning 
 Desktop replies with `pair.success` and returns a `trustSecret`. Android stores it in private app storage, iOS stores it in Keychain, and desktop stores only a SHA-256 hash in the user config folder.
 
 The Vercel web pairing page stores its browser identity and `trustSecret` in `localStorage`. This keeps the "scan QR, click Izinkan pairing" flow app-free for iOS Camera and mobile browsers.
+Web pairing clients send `"encoder": "none"` and `"canStream": false` because mobile browsers cannot capture the whole screen as H264.
 
 iOS uses the same message shape with `"platform": "ios"`:
 

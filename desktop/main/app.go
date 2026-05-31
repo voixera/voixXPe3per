@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"voixpe3per/desktop/network"
 	"voixpe3per/desktop/pairing"
 	"voixpe3per/desktop/streaming"
 
@@ -33,8 +32,7 @@ type Snapshot struct {
 
 func NewApp() *App {
 	store := pairing.NewFileStore("")
-	lan := network.NewLANDetector()
-	pairingService := pairing.NewService(lan, store, 8080)
+	pairingService := pairing.NewService(store, 8080)
 	server := streaming.NewServer(":8080", pairingService)
 
 	app := &App{
@@ -145,6 +143,10 @@ func (a *App) emitSnapshot() {
 func (a *App) startRelayIfConfigured(ctx context.Context) {
 	snapshot := a.pairing.Snapshot()
 	if snapshot.Mode != pairing.ModeRelay || snapshot.RelayURL == "" || snapshot.Room == "" {
+		if a.relay != nil {
+			a.relay.Shutdown()
+			a.relay = nil
+		}
 		return
 	}
 

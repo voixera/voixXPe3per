@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
         }
         val subtitle = TextView(this).apply {
-            text = "Scan QR dari desktop untuk mulai mirror layar lewat LAN."
+            text = "Scan QR dari desktop untuk mulai mirror layar lewat WSS publik."
             textSize = 14f
             setTextColor(0xFF8D98A8.toInt())
             gravity = Gravity.CENTER

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://local.voixpe3per/protocol/messages.schema.json",
+  "$id": "https://voixpe3per.dev/protocol/messages.schema.json",
   "title": "voiXPe3per WebSocket Messages",
   "oneOf": [
     {
@@ -14,8 +14,10 @@
         "capabilities": {
           "type": "object",
           "properties": {
-            "encoder": { "enum": ["h264"] },
-            "maxFps": { "type": "integer", "minimum": 24, "maximum": 120 }
+            "encoder": { "enum": ["h264", "none"] },
+            "maxFps": { "type": "integer", "minimum": 0, "maximum": 120 },
+            "canStream": { "type": "boolean" },
+            "pairingOnly": { "type": "boolean" }
           }
         }
       }

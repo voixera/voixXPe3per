@@ -4,7 +4,7 @@ export interface PairingSession {
   host: string;
   port: number;
   token: string;
-  mode: "relay" | "direct" | "lan";
+  mode: "relay" | "direct";
   relayUrl: string;
   room: string;
   qrDataUrl: string;
@@ -20,6 +20,7 @@ export interface TrustedDevice {
   osName: string;
   osVersion: string;
   androidVersion: string;
+  streamCapable: boolean;
   status: DeviceStatus;
   lastSeen: string;
 }

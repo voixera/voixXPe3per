@@ -39,6 +39,7 @@ type DeviceView struct {
 	OSName         string       `json:"osName"`
 	OSVersion      string       `json:"osVersion"`
 	AndroidVersion string       `json:"androidVersion"`
+	StreamCapable  bool         `json:"streamCapable"`
 	Status         DeviceStatus `json:"status"`
 	LastSeen       time.Time    `json:"lastSeen"`
 }
@@ -52,6 +53,7 @@ type trustedDevice struct {
 	OSName          string       `json:"osName"`
 	OSVersion       string       `json:"osVersion"`
 	AndroidVersion  string       `json:"androidVersion"`
+	StreamCapable   bool         `json:"streamCapable"`
 	Status          DeviceStatus `json:"status"`
 	LastSeen        time.Time    `json:"lastSeen"`
 	TrustSecretHash string       `json:"trustSecretHash"`
@@ -66,6 +68,7 @@ type DeviceHandshake struct {
 	OSName         string `json:"osName"`
 	OSVersion      string `json:"osVersion"`
 	AndroidVersion string `json:"androidVersion"`
+	StreamCapable  bool   `json:"streamCapable"`
 }
 
 type PairSuccess struct {

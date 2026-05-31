@@ -1,6 +1,6 @@
 # voiXPe3per
 
-voiXPe3per adalah starter project untuk mirroring layar Android/iOS ke desktop Windows. Mode default sekarang memakai relay WebSocket publik, jadi mobile device dan desktop tidak harus berada di jaringan WiFi/LAN yang sama. Desktop menampilkan QR pairing, browser mobile membuka halaman Vercel, lalu user cukup klik `Izinkan pairing`.
+voiXPe3per adalah starter project untuk mirroring layar Android/iOS ke desktop Windows. Mode default memakai relay WebSocket publik, jadi mobile device dan desktop tidak harus berada di jaringan yang sama. Desktop menampilkan QR pairing, browser mobile membuka halaman Vercel, lalu user cukup klik `Izinkan pairing`.
 
 ## Struktur
 
@@ -73,7 +73,7 @@ Script ini akan:
 - membuat URL `wss://...trycloudflare.com/ws`,
 - membuka EXE dengan `VOIXPE3PER_PAIRING_MODE=direct`,
 - membuat QR baru yang masuk ke desktop lewat WSS publik,
-- tidak membutuhkan APK, akun, atau LAN yang sama.
+- tidak membutuhkan APK, akun, atau jaringan yang sama.
 
 Untuk dipakai lintas jaringan oleh semua orang, deploy relay dari folder `relay/`, lalu set environment variable desktop:
 
@@ -120,13 +120,7 @@ WebSocket URL:
 wss://voixpe3per-relay.onrender.com/ws
 ```
 
-Untuk development relay lokal saja:
-
-```powershell
-.\scripts\start-relay.ps1
-$env:VOIXPE3PER_RELAY_URL="ws://127.0.0.1:8090/ws"
-voiXPe3per.exe
-```
+Jalur pairing publik membutuhkan URL `wss://`. Browser pairing Vercel tidak memakai `ws://` lokal.
 
 ## Android
 
@@ -181,7 +175,7 @@ cd phone-mirror
 iOS native flow:
 
 1. Scan QR dari desktop memakai app iOS voiXPe3per.
-2. Connect ke relay/LAN WebSocket.
+2. Connect ke relay WSS publik.
 3. Join room relay sebagai role `ios`.
 4. Kirim `pair.verify` dengan identity iOS.
 5. Simpan `trustSecret` di Keychain.

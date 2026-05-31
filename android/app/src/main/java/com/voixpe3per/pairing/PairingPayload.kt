@@ -13,7 +13,7 @@ data class PairingPayload(
     val room: String
 ) {
     val url: String
-        get() = if (mode == "relay" || mode == "direct") relay.ifBlank { publicUrl } else "ws://$host:$port/ws"
+        get() = relay.ifBlank { publicUrl }
 
     companion object {
         fun fromQr(raw: String): PairingPayload {
@@ -23,7 +23,7 @@ data class PairingPayload(
 
             val json = JSONObject(raw)
             return PairingPayload(
-                mode = json.optString("mode", "lan"),
+                mode = json.optString("mode", "relay"),
                 host = json.optString("host", ""),
                 port = json.optInt("port", 8080),
                 token = json.optString("token", ""),

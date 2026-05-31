@@ -2,7 +2,7 @@ import type { DesktopSnapshot, PairingSession, StreamFrame, StreamMetrics } from
 
 const emptySnapshot: DesktopSnapshot = {
   pairing: {
-    host: "127.0.0.1",
+    host: "",
     port: 8080,
     token: "dev-token",
     mode: "relay",
@@ -21,6 +21,7 @@ const emptySnapshot: DesktopSnapshot = {
       osName: "Android",
       osVersion: "14",
       androidVersion: "14",
+      streamCapable: true,
       status: "offline",
       lastSeen: new Date().toISOString()
     }
@@ -28,7 +29,7 @@ const emptySnapshot: DesktopSnapshot = {
   metrics: {
     fps: 0,
     codec: "H264",
-    transport: "WiFi Local",
+    transport: "Public WSS",
     latencyMs: 0,
     frames: 0,
     updatedAt: new Date().toISOString(),

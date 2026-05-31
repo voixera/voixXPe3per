@@ -1,4 +1,4 @@
-import { Apple, Smartphone, Trash2 } from "lucide-react";
+import { Apple, Globe2, Smartphone, Trash2 } from "lucide-react";
 import { useAppState } from "../store/appStore";
 import type { TrustedDevice } from "../types";
 import { StatusPill } from "./StatusPill";
@@ -22,7 +22,13 @@ export function DevicePanel({ devices }: { devices: TrustedDevice[] }) {
               className="group mb-1 grid grid-cols-[32px_1fr_28px] items-center gap-2 border border-transparent px-2 py-2 transition hover:border-shell-600 hover:bg-shell-800"
             >
               <div className="grid h-8 w-8 place-items-center bg-shell-900 text-slate-400">
-                {device.platform === "ios" ? <Apple size={16} /> : <Smartphone size={16} />}
+                {device.platform === "web" ? (
+                  <Globe2 size={16} />
+                ) : device.platform === "ios" ? (
+                  <Apple size={16} />
+                ) : (
+                  <Smartphone size={16} />
+                )}
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-slate-200">{device.name}</p>
@@ -56,6 +62,9 @@ export function DevicePanel({ devices }: { devices: TrustedDevice[] }) {
 function platformLabel(platform: string) {
   if (platform === "ios") {
     return "iOS";
+  }
+  if (platform === "web") {
+    return "Web";
   }
   if (platform === "android") {
     return "Android";

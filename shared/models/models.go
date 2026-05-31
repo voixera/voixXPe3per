@@ -18,6 +18,7 @@ type DeviceIdentity struct {
 	OSName         string `json:"osName"`
 	OSVersion      string `json:"osVersion"`
 	AndroidVersion string `json:"androidVersion"`
+	StreamCapable  bool   `json:"streamCapable"`
 }
 
 type PairingPayload struct {

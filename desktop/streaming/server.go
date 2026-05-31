@@ -52,7 +52,7 @@ func NewServer(addr string, pairingService *pairing.Service) *Server {
 		},
 		metrics: Metrics{
 			Codec:     "H264",
-			Transport: "WiFi Local",
+			Transport: "Public WSS",
 			UpdatedAt: time.Now().UTC(),
 		},
 	}
@@ -218,6 +218,7 @@ func (s *Server) handleText(sendJSON func(any) error, payload []byte, currentDev
 			OSName:         message.Device.OSName,
 			OSVersion:      message.Device.OSVersion,
 			AndroidVersion: message.Device.AndroidVersion,
+			StreamCapable:  streamCapable(message.Capabilities),
 		})
 		if err != nil {
 			_ = sendJSON(map[string]string{"type": "pair.failed", "message": err.Error()})
@@ -370,4 +371,14 @@ func resolution(width, height int) string {
 func jsonNumber(value int) string {
 	data, _ := json.Marshal(value)
 	return string(data)
+}
+
+func streamCapable(capabilities map[string]any) bool {
+	if value, ok := capabilities["canStream"].(bool); ok {
+		return value
+	}
+	if encoder, ok := capabilities["encoder"].(string); ok && encoder == "none" {
+		return false
+	}
+	return true
 }

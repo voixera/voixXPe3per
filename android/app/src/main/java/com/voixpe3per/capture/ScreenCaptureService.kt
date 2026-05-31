@@ -7,7 +7,9 @@ import android.app.Service
 import android.content.Intent
 import android.media.projection.MediaProjection
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import com.voixpe3per.encoder.H264Encoder
@@ -19,8 +21,11 @@ import com.voixpe3per.security.TrustedDeviceStore
 class ScreenCaptureService : Service() {
     private val channelId = "voixpe3per_capture"
     private var projection: MediaProjection? = null
+    private var projectionCallback: MediaProjection.Callback? = null
     private var encoder: H264Encoder? = null
     private val virtualDisplay = VirtualDisplayController()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var stoppingCapture = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -56,27 +61,79 @@ class ScreenCaptureService : Service() {
         val height = metrics.heightPixels.coerceAtMost(2400)
         val fps = 60
 
-        sender.sendStreamStart(width, height, fps)
-        projection = ProjectionSession(this).create(resultCode, resultData)
-        encoder = H264Encoder(width, height, fps) { bytes, keyFrame ->
+        val mediaProjection = ProjectionSession(this).create(resultCode, resultData)
+        projection = mediaProjection
+        registerProjectionCallback(mediaProjection)
+
+        val h264Encoder = H264Encoder(width, height, fps) { bytes, keyFrame ->
             sender.send(bytes, keyFrame)
         }
+        encoder = h264Encoder
+        SocketRegistry.setKeyframeRequester { h264Encoder.requestKeyFrame() }
 
-        val surface = encoder?.start() ?: return
-        virtualDisplay.start(
-            projection = projection ?: return,
-            width = width,
-            height = height,
-            densityDpi = metrics.densityDpi,
-            surface = surface
-        )
+        val surface = h264Encoder.start()
+        val started = runCatching {
+            virtualDisplay.start(
+                projection = mediaProjection,
+                width = width,
+                height = height,
+                densityDpi = metrics.densityDpi,
+                surface = surface
+            )
+        }.onFailure {
+            stopCapture(releaseProjection = true)
+            stopSelf()
+        }.isSuccess
+
+        if (!started) {
+            return
+        }
+
+        sender.sendStreamStart(width, height, fps)
+        h264Encoder.requestKeyFrame()
+    }
+
+    private fun registerProjectionCallback(mediaProjection: MediaProjection) {
+        val callback = object : MediaProjection.Callback() {
+            override fun onStop() {
+                stopCapture(releaseProjection = false)
+                stopSelf()
+            }
+        }
+        projectionCallback = callback
+        mediaProjection.registerCallback(callback, mainHandler)
+    }
+
+    private fun stopCapture(releaseProjection: Boolean) {
+        if (stoppingCapture) {
+            return
+        }
+
+        stoppingCapture = true
+        try {
+            virtualDisplay.stop()
+            encoder?.stop()
+            encoder = null
+            SocketRegistry.setKeyframeRequester(null)
+
+            val activeProjection = projection
+            projectionCallback?.let { callback ->
+                activeProjection?.let { runCatching { it.unregisterCallback(callback) } }
+            }
+            projectionCallback = null
+
+            if (releaseProjection) {
+                runCatching { activeProjection?.stop() }
+            }
+            projection = null
+            SocketRegistry.detach()
+        } finally {
+            stoppingCapture = false
+        }
     }
 
     override fun onDestroy() {
-        virtualDisplay.stop()
-        encoder?.stop()
-        projection?.stop()
-        SocketRegistry.detach()
+        stopCapture(releaseProjection = true)
         super.onDestroy()
     }
 

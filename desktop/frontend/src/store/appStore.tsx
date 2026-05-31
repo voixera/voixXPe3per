@@ -28,7 +28,7 @@ const initialState: AppState = {
   metrics: {
     fps: 0,
     codec: "H264",
-    transport: "WiFi Local",
+    transport: "Public WSS",
     latencyMs: 0,
     frames: 0,
     updatedAt: new Date().toISOString(),

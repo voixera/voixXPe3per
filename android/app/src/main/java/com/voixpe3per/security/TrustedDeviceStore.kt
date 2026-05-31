@@ -13,7 +13,7 @@ data class TrustedDesktop(
     val trustSecret: String
 ) {
     val url: String
-        get() = if (mode == "relay" || mode == "direct") relay.ifBlank { publicUrl } else "ws://$host:$port/ws"
+        get() = relay.ifBlank { publicUrl }
 }
 
 class TrustedDeviceStore(context: Context) {
@@ -34,14 +34,11 @@ class TrustedDeviceStore(context: Context) {
     }
 
     fun load(): TrustedDesktop? {
-        val mode = prefs.getString("mode", "lan") ?: "lan"
+        val mode = prefs.getString("mode", "relay") ?: "relay"
         val host = prefs.getString("host", "") ?: ""
         val relay = prefs.getString("relay", "") ?: ""
         val public = prefs.getString("public", "") ?: ""
-        if ((mode == "relay" || mode == "direct") && relay.isBlank() && public.isBlank()) {
-            return null
-        }
-        if (mode != "relay" && mode != "direct" && host.isBlank()) {
+        if (relay.isBlank() && public.isBlank()) {
             return null
         }
         val deviceId = prefs.getString("device_id", null) ?: return null

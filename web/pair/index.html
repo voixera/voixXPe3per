@@ -54,11 +54,9 @@
 
       document.getElementById("room").textContent = payload.room || "No room";
       document.getElementById("mode").textContent = payload.mode;
-      document.getElementById("relay").textContent = payload.relay || payload.public || `${payload.host}:${payload.port}`;
+      document.getElementById("relay").textContent = payload.relay || payload.public || "WSS publik belum ada";
       document.getElementById("summary").textContent =
-        payload.mode === "relay" || payload.mode === "direct"
-          ? "Klik Izinkan pairing untuk menghubungkan browser ini ke desktop. Tidak perlu install aplikasi tambahan."
-          : "Mode LAN tidak bisa dijamin dari halaman HTTPS Vercel. Gunakan relay WSS publik agar pairing web berjalan.";
+        "Klik Izinkan pairing untuk menghubungkan browser ini ke desktop lewat WSS publik. Tidak perlu satu jaringan.";
 
       allowButton.addEventListener("click", allowPairing);
 
@@ -107,7 +105,7 @@
                 trustSecret: message.trustSecret
               })
             );
-            setStatus("Pairing berhasil. Browser ini sudah menjadi trusted device.");
+            setStatus("Pairing berhasil. Browser ini trusted, tetapi browser mobile tidak bisa mengirim stream H264 layar.");
             allowButton.textContent = "Pairing berhasil";
             return;
           }
@@ -139,22 +137,22 @@
             room: payload.room,
             device: deviceIdentity(),
             capabilities: {
-              encoder: "h264",
-              maxFps: 60
+              encoder: "none",
+              maxFps: 0,
+              canStream: false,
+              pairingOnly: true
             }
           })
         );
       }
 
       function websocketUrl(data) {
-        const url = data.mode === "relay" || data.mode === "direct"
-          ? data.relay || data.public
-          : `ws://${data.host}:${data.port}/ws`;
+        const url = data.relay || data.public;
         if (!url) {
-          throw new Error("Payload QR tidak punya alamat relay.");
+          throw new Error("Payload QR tidak punya alamat WSS publik.");
         }
-        if (window.location.protocol === "https:" && url.startsWith("ws://")) {
-          throw new Error("Halaman Vercel membutuhkan relay wss:// publik, bukan ws:// lokal.");
+        if (!url.startsWith("wss://")) {
+          throw new Error("Pairing publik membutuhkan alamat wss://, bukan ws:// lokal.");
         }
         return url;
       }
@@ -189,7 +187,7 @@
             name: `${model} ${browser}`,
             model,
             manufacturer: "Apple",
-            platform: "ios",
+            platform: "web",
             osName: "iOS",
             osVersion: osMatch ? osMatch[1].replaceAll("_", ".") : "unknown"
           };
