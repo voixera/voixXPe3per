@@ -21,9 +21,13 @@ type DeviceIdentity struct {
 }
 
 type PairingPayload struct {
-	Host  string `json:"host"`
-	Port  int    `json:"port"`
-	Token string `json:"token"`
+	Mode   string `json:"mode"`
+	Host   string `json:"host,omitempty"`
+	Port   int    `json:"port,omitempty"`
+	Token  string `json:"token,omitempty"`
+	Relay  string `json:"relay,omitempty"`
+	Public string `json:"public,omitempty"`
+	Room   string `json:"room,omitempty"`
 }
 
 type TrustedDevice struct {

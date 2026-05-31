@@ -8,6 +8,12 @@ Global relay endpoint:
 wss://voixpe3per-relay.onrender.com/ws
 ```
 
+Direct public WSS tunnel endpoint:
+
+```text
+wss://<trycloudflare-or-public-host>/ws
+```
+
 The relay is a dumb room forwarder. It does not know device trust secrets and only forwards packets between peers in the same room.
 
 Legacy LAN endpoint:
@@ -23,6 +29,17 @@ The relay QR payload:
   "mode": "relay",
   "relay": "wss://voixpe3per-relay.onrender.com/ws",
   "room": "A1B2C3D4E5F6"
+}
+```
+
+The direct public WSS payload:
+
+```json
+{
+  "mode": "direct",
+  "relay": "wss://example.trycloudflare.com/ws",
+  "public": "wss://example.trycloudflare.com/ws",
+  "token": "generated_token"
 }
 ```
 

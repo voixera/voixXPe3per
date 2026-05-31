@@ -5,11 +5,15 @@ struct TrustedDesktop: Codable, Equatable {
     let host: String
     let port: Int
     let relay: String
+    let publicURL: String
     let room: String
     let deviceId: String
 
     func webSocketURL() throws -> URL {
-        if mode == "relay", let relayURL = URL(string: relay) {
+        if mode == "relay" || mode == "direct" {
+            guard let relayURL = URL(string: relay.isEmpty ? publicURL : relay) else {
+                throw PairingError.invalidWebSocketURL
+            }
             return relayURL
         }
         guard let lanURL = URL(string: "ws://\(host):\(port)/ws") else {

@@ -82,6 +82,7 @@ final class DesktopSocket {
                         host: payload.host,
                         port: payload.port,
                         relay: payload.relay,
+                        publicURL: payload.publicURL,
                         room: payload.room,
                         deviceId: deviceId
                     )

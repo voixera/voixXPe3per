@@ -38,6 +38,7 @@
       const payload = {
         mode: params.get("mode") || "relay",
         relay: params.get("relay") || "",
+        public: params.get("public") || "",
         room: params.get("room") || "",
         host: params.get("host") || "",
         port: Number(params.get("port") || 8080),
@@ -53,9 +54,9 @@
 
       document.getElementById("room").textContent = payload.room || "No room";
       document.getElementById("mode").textContent = payload.mode;
-      document.getElementById("relay").textContent = payload.relay || `${payload.host}:${payload.port}`;
+      document.getElementById("relay").textContent = payload.relay || payload.public || `${payload.host}:${payload.port}`;
       document.getElementById("summary").textContent =
-        payload.mode === "relay"
+        payload.mode === "relay" || payload.mode === "direct"
           ? "Klik Izinkan pairing untuk menghubungkan browser ini ke desktop. Tidak perlu install aplikasi tambahan."
           : "Mode LAN tidak bisa dijamin dari halaman HTTPS Vercel. Gunakan relay WSS publik agar pairing web berjalan.";
 
@@ -118,7 +119,7 @@
         socket.addEventListener("close", () => {
           window.clearInterval(pairTimer);
           if (!pairingDone) {
-            setFailed("Koneksi pairing terputus");
+            setFailed("Koneksi pairing terputus. Pastikan desktop masih terbuka dan WSS publik/tunnel masih aktif.");
           }
         });
         socket.addEventListener("error", () => {
@@ -146,7 +147,9 @@
       }
 
       function websocketUrl(data) {
-        const url = data.mode === "relay" ? data.relay : `ws://${data.host}:${data.port}/ws`;
+        const url = data.mode === "relay" || data.mode === "direct"
+          ? data.relay || data.public
+          : `ws://${data.host}:${data.port}/ws`;
         if (!url) {
           throw new Error("Payload QR tidak punya alamat relay.");
         }

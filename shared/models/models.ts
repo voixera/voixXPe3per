@@ -12,9 +12,13 @@ export interface DeviceIdentity {
 }
 
 export interface PairingPayload {
-  host: string;
-  port: number;
-  token: string;
+  mode: "relay" | "direct" | "lan" | string;
+  host?: string;
+  port?: number;
+  token?: string;
+  relay?: string;
+  public?: string;
+  room?: string;
 }
 
 export interface TrustedDevice extends DeviceIdentity {

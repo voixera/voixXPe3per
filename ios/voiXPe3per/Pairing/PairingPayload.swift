@@ -6,11 +6,12 @@ struct PairingPayload: Equatable {
     let port: Int
     let token: String
     let relay: String
+    let publicURL: String
     let room: String
 
     func webSocketURL() throws -> URL {
-        if mode == "relay" {
-            guard let relayURL = URL(string: relay) else {
+        if mode == "relay" || mode == "direct" {
+            guard let relayURL = URL(string: relay.isEmpty ? publicURL : relay) else {
                 throw PairingError.invalidWebSocketURL
             }
             return relayURL
@@ -43,6 +44,7 @@ struct PairingPayload: Equatable {
             port: json.int("port") ?? 8080,
             token: json.string("token") ?? "",
             relay: json.string("relay") ?? "",
+            publicURL: json.string("public") ?? "",
             room: json.string("room") ?? ""
         )
     }
@@ -58,6 +60,7 @@ struct PairingPayload: Equatable {
             port: Int(components.queryValue("port") ?? "") ?? 8080,
             token: components.queryValue("token") ?? "",
             relay: components.queryValue("relay") ?? "",
+            publicURL: components.queryValue("public") ?? "",
             room: components.queryValue("room") ?? ""
         )
     }

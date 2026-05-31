@@ -4,7 +4,7 @@ export interface PairingSession {
   host: string;
   port: number;
   token: string;
-  mode: "relay" | "lan";
+  mode: "relay" | "direct" | "lan";
   relayUrl: string;
   room: string;
   qrDataUrl: string;

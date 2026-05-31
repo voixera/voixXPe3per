@@ -61,6 +61,20 @@ Saat aplikasi dibuka, backend Wails akan:
 - connect ke relay WebSocket publik,
 - menyimpan trusted device di config lokal user.
 
+Kalau muncul `Koneksi pairing terputus`, artinya relay WSS publik di QR belum hidup atau tunnel sudah mati. Cara paling cepat tanpa deploy akun hosting adalah menjalankan direct public WSS tunnel:
+
+```powershell
+cd phone-mirror
+powershell -ExecutionPolicy Bypass -File .\scripts\start-public-wss.ps1
+```
+
+Script ini akan:
+
+- membuat URL `wss://...trycloudflare.com/ws`,
+- membuka EXE dengan `VOIXPE3PER_PAIRING_MODE=direct`,
+- membuat QR baru yang masuk ke desktop lewat WSS publik,
+- tidak membutuhkan APK, akun, atau LAN yang sama.
+
 Untuk dipakai lintas jaringan oleh semua orang, deploy relay dari folder `relay/`, lalu set environment variable desktop:
 
 ```powershell
@@ -89,6 +103,8 @@ Flow paling sederhana:
 5. Desktop menyimpan browser/mobile sebagai trusted device.
 
 Halaman Vercel hanya bisa pairing lewat relay `wss://...` publik. Vercel dipakai sebagai UI pairing statis; WebSocket relay tetap harus berjalan di host yang mendukung koneksi WebSocket persisten.
+
+Untuk mode direct tunnel, halaman Vercel connect langsung ke desktop melalui `VOIXPE3PER_PUBLIC_WS_URL` dan token QR. Ini cocok untuk testing cepat saat relay publik permanen belum live.
 
 ## Public WSS Relay
 

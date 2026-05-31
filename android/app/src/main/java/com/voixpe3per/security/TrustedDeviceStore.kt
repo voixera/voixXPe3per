@@ -7,12 +7,13 @@ data class TrustedDesktop(
     val host: String,
     val port: Int,
     val relay: String,
+    val publicUrl: String,
     val room: String,
     val deviceId: String,
     val trustSecret: String
 ) {
     val url: String
-        get() = if (mode == "relay") relay else "ws://$host:$port/ws"
+        get() = if (mode == "relay" || mode == "direct") relay.ifBlank { publicUrl } else "ws://$host:$port/ws"
 }
 
 class TrustedDeviceStore(context: Context) {
@@ -25,6 +26,7 @@ class TrustedDeviceStore(context: Context) {
             .putString("host", desktop.host)
             .putInt("port", desktop.port)
             .putString("relay", desktop.relay)
+            .putString("public", desktop.publicUrl)
             .putString("room", desktop.room)
             .putString("device_id", desktop.deviceId)
             .putString("trust_secret", protector.encrypt(desktop.trustSecret))
@@ -35,10 +37,11 @@ class TrustedDeviceStore(context: Context) {
         val mode = prefs.getString("mode", "lan") ?: "lan"
         val host = prefs.getString("host", "") ?: ""
         val relay = prefs.getString("relay", "") ?: ""
-        if (mode == "relay" && relay.isBlank()) {
+        val public = prefs.getString("public", "") ?: ""
+        if ((mode == "relay" || mode == "direct") && relay.isBlank() && public.isBlank()) {
             return null
         }
-        if (mode != "relay" && host.isBlank()) {
+        if (mode != "relay" && mode != "direct" && host.isBlank()) {
             return null
         }
         val deviceId = prefs.getString("device_id", null) ?: return null
@@ -48,6 +51,7 @@ class TrustedDeviceStore(context: Context) {
             host = host,
             port = prefs.getInt("port", 8080),
             relay = relay,
+            publicUrl = public,
             room = prefs.getString("room", "") ?: "",
             deviceId = deviceId,
             trustSecret = trustSecret

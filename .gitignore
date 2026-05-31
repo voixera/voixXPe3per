@@ -1,4 +1,5 @@
 # Desktop
+.tools/
 desktop/build/
 desktop/frontend/dist/
 desktop/frontend/node_modules/

@@ -42,6 +42,7 @@ class DesktopSocket {
                             host = payload.host,
                             port = payload.port,
                             relay = payload.relay,
+                            publicUrl = payload.publicUrl,
                             room = payload.room,
                             deviceId = json.getString("deviceId"),
                             trustSecret = json.getString("trustSecret")

@@ -10,12 +10,13 @@ const (
 )
 
 type PairingPayload struct {
-	Mode  string `json:"mode"`
-	Host  string `json:"host,omitempty"`
-	Port  int    `json:"port,omitempty"`
-	Token string `json:"token,omitempty"`
-	Relay string `json:"relay,omitempty"`
-	Room  string `json:"room,omitempty"`
+	Mode   string `json:"mode"`
+	Host   string `json:"host,omitempty"`
+	Port   int    `json:"port,omitempty"`
+	Token  string `json:"token,omitempty"`
+	Relay  string `json:"relay,omitempty"`
+	Public string `json:"public,omitempty"`
+	Room   string `json:"room,omitempty"`
 }
 
 type SessionSnapshot struct {

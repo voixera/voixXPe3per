@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	ModeLAN   = "lan"
-	ModeRelay = "relay"
+	ModeLAN    = "lan"
+	ModeRelay  = "relay"
+	ModeDirect = "direct"
 
 	defaultPairingPageURL = "https://voixxpe3per.vercel.app/pair"
 	defaultRelayURL       = "wss://voixpe3per-relay.onrender.com/ws"
@@ -48,13 +49,21 @@ func NewService(lan *network.LANDetector, store Store, port int) *Service {
 }
 
 func (s *Service) StartSession() error {
+	publicURL := strings.TrimSpace(os.Getenv("VOIXPE3PER_PUBLIC_WS_URL"))
 	relayURL := strings.TrimSpace(os.Getenv("VOIXPE3PER_RELAY_URL"))
 	mode := strings.ToLower(strings.TrimSpace(os.Getenv("VOIXPE3PER_PAIRING_MODE")))
+	if mode == "" && publicURL != "" {
+		mode = ModeDirect
+	}
 	if mode == "" && relayURL != "" {
 		mode = ModeRelay
 	}
 	if mode == "" {
 		mode = ModeRelay
+	}
+
+	if mode == ModeDirect {
+		return s.startDirectSession(publicURL)
 	}
 
 	if mode == ModeRelay {
@@ -92,6 +101,40 @@ func (s *Service) StartSession() error {
 		Mode:      ModeLAN,
 		QRDataURL: "data:image/png;base64," + base64.StdEncoding.EncodeToString(png),
 		Status:    "Waiting for device...",
+	}
+	return nil
+}
+
+func (s *Service) startDirectSession(publicURL string) error {
+	if publicURL == "" {
+		return fmt.Errorf("VOIXPE3PER_PUBLIC_WS_URL is required for direct public pairing")
+	}
+
+	token, err := randomToken(32)
+	if err != nil {
+		return err
+	}
+
+	payload := PairingPayload{
+		Mode:   ModeDirect,
+		Token:  token,
+		Relay:  publicURL,
+		Public: publicURL,
+	}
+	qrTarget := pairingURL(payload)
+	png, err := qrcode.Encode(qrTarget, qrcode.Medium, 384)
+	if err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.session = SessionSnapshot{
+		Token:     token,
+		Mode:      ModeDirect,
+		RelayURL:  publicURL,
+		QRDataURL: "data:image/png;base64," + base64.StdEncoding.EncodeToString(png),
+		Status:    "Waiting through public WSS...",
 	}
 	return nil
 }
@@ -305,6 +348,9 @@ func pairingURL(payload PairingPayload) string {
 	query.Set("mode", payload.Mode)
 	if payload.Relay != "" {
 		query.Set("relay", payload.Relay)
+	}
+	if payload.Public != "" {
+		query.Set("public", payload.Public)
 	}
 	if payload.Room != "" {
 		query.Set("room", payload.Room)
