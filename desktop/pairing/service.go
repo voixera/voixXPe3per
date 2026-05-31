@@ -23,6 +23,7 @@ const (
 	ModeRelay = "relay"
 
 	defaultPairingPageURL = "https://voixxpe3per.vercel.app/pair"
+	defaultRelayURL       = "wss://voixpe3per-relay.onrender.com/ws"
 )
 
 type Service struct {
@@ -97,7 +98,7 @@ func (s *Service) StartSession() error {
 
 func (s *Service) startRelaySession(relayURL string) error {
 	if relayURL == "" {
-		relayURL = "ws://127.0.0.1:8090/ws"
+		relayURL = defaultRelayURL
 	}
 
 	room, err := randomRoom()

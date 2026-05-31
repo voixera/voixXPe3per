@@ -5,7 +5,7 @@ voiXPe3per supports two transports. The default is global relay mode, so Android
 Global relay endpoint:
 
 ```text
-wss://<relay-domain>/ws
+wss://voixpe3per-relay.onrender.com/ws
 ```
 
 The relay is a dumb room forwarder. It does not know device trust secrets and only forwards packets between peers in the same room.
@@ -21,7 +21,7 @@ The relay QR payload:
 ```json
 {
   "mode": "relay",
-  "relay": "wss://relay.example.com/ws",
+  "relay": "wss://voixpe3per-relay.onrender.com/ws",
   "room": "A1B2C3D4E5F6"
 }
 ```

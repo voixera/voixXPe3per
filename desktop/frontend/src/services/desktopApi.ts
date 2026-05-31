@@ -6,7 +6,7 @@ const emptySnapshot: DesktopSnapshot = {
     port: 8080,
     token: "dev-token",
     mode: "relay",
-    relayUrl: "ws://127.0.0.1:8090/ws",
+    relayUrl: "wss://voixpe3per-relay.onrender.com/ws",
     room: "DEVROOM",
     qrDataUrl: "",
     status: "Waiting for device..."

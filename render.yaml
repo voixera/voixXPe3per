@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: voixpe3per-relay
+    runtime: node
+    rootDir: relay
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true

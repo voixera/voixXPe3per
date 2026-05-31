@@ -65,9 +65,15 @@ Untuk dipakai lintas jaringan oleh semua orang, deploy relay dari folder `relay/
 
 ```powershell
 $env:VOIXPE3PER_PAIRING_MODE="relay"
-$env:VOIXPE3PER_RELAY_URL="wss://domain-relay-kamu/ws"
+$env:VOIXPE3PER_RELAY_URL="wss://voixpe3per-relay.onrender.com/ws"
 $env:VOIXPE3PER_PAIRING_PAGE_URL="https://voixxpe3per.vercel.app/pair"
 voiXPe3per.exe
+```
+
+Jika `VOIXPE3PER_RELAY_URL` tidak diisi, desktop production otomatis memakai:
+
+```text
+wss://voixpe3per-relay.onrender.com/ws
 ```
 
 QR Code sengaja dibuat sebagai URL halaman pairing, bukan JSON mentah. Ini membuat iOS Camera membuka halaman Vercel, lalu pairing bisa dilakukan langsung dari browser dengan tombol `Izinkan pairing`.
@@ -84,7 +90,21 @@ Flow paling sederhana:
 
 Halaman Vercel hanya bisa pairing lewat relay `wss://...` publik. Vercel dipakai sebagai UI pairing statis; WebSocket relay tetap harus berjalan di host yang mendukung koneksi WebSocket persisten.
 
-Untuk development relay lokal:
+## Public WSS Relay
+
+Relay publik disiapkan untuk Render melalui `render.yaml`. Deploy sebagai Render Blueprint dari repo GitHub ini, lalu domain default akan menjadi:
+
+```text
+https://voixpe3per-relay.onrender.com
+```
+
+WebSocket URL:
+
+```text
+wss://voixpe3per-relay.onrender.com/ws
+```
+
+Untuk development relay lokal saja:
 
 ```powershell
 .\scripts\start-relay.ps1
