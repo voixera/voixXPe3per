@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "web/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/pair",
+      "dest": "/web/pair/index.html"
+    },
+    {
+      "src": "/style.css",
+      "dest": "/web/style.css"
+    },
+    {
+      "src": "/",
+      "dest": "/web/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/web/$1"
+    }
+  ]
+}

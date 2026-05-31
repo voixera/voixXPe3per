@@ -1,0 +1,68 @@
+import type { DesktopSnapshot, PairingSession, StreamFrame, StreamMetrics } from "../types";
+
+const emptySnapshot: DesktopSnapshot = {
+  pairing: {
+    host: "127.0.0.1",
+    port: 8080,
+    token: "dev-token",
+    mode: "relay",
+    relayUrl: "ws://127.0.0.1:8090/ws",
+    room: "DEVROOM",
+    qrDataUrl: "",
+    status: "Waiting for device..."
+  },
+  devices: [
+    {
+      id: "demo-galaxy-a55",
+      name: "Samsung Galaxy A55",
+      model: "Galaxy A55",
+      manufacturer: "Samsung",
+      androidVersion: "14",
+      status: "offline",
+      lastSeen: new Date().toISOString()
+    }
+  ],
+  metrics: {
+    fps: 0,
+    codec: "H264",
+    transport: "WiFi Local",
+    latencyMs: 0,
+    frames: 0,
+    updatedAt: new Date().toISOString(),
+    resolution: "Auto"
+  }
+};
+
+export const desktopApi = {
+  async getSnapshot(): Promise<DesktopSnapshot> {
+    return window.go?.mainapp?.App?.GetSnapshot?.() ?? emptySnapshot;
+  },
+
+  async refreshPairing(): Promise<PairingSession> {
+    return window.go?.mainapp?.App?.RefreshPairing?.() ?? emptySnapshot.pairing;
+  },
+
+  async forgetDevice(deviceId: string): Promise<void> {
+    await window.go?.mainapp?.App?.ForgetDevice?.(deviceId);
+  },
+
+  async refreshStream(): Promise<void> {
+    await window.go?.mainapp?.App?.RefreshStream?.();
+  },
+
+  async toggleFullscreen(): Promise<void> {
+    await window.go?.mainapp?.App?.ToggleFullscreen?.();
+  },
+
+  onSnapshot(callback: (snapshot: DesktopSnapshot) => void): () => void {
+    return window.runtime?.EventsOn?.("app.snapshot", callback) ?? (() => undefined);
+  },
+
+  onFrame(callback: (frame: StreamFrame) => void): () => void {
+    return window.runtime?.EventsOn?.("stream.frame", callback) ?? (() => undefined);
+  },
+
+  onMetrics(callback: (metrics: StreamMetrics) => void): () => void {
+    return window.runtime?.EventsOn?.("stream.metrics", callback) ?? (() => undefined);
+  }
+};

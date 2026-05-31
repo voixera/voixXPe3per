@@ -1,0 +1,19 @@
+# Desktop
+desktop/build/
+desktop/frontend/dist/
+desktop/frontend/node_modules/
+desktop/frontend/package.json.md5
+desktop/frontend/wailsjs/
+relay/node_modules/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

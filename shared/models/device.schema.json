@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.voixpe3per/models/device.schema.json",
+  "title": "Android Device",
+  "type": "object",
+  "required": ["id", "name", "model", "manufacturer", "androidVersion"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "model": { "type": "string" },
+    "manufacturer": { "type": "string" },
+    "androidVersion": { "type": "string" }
+  }
+}

@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #0f1013;
+  color: #d6dde8;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+button {
+  letter-spacing: 0;
+}
+
+@layer components {
+  .icon-button {
+    @apply grid h-8 w-8 place-items-center border border-shell-600 bg-shell-800 text-slate-300 transition hover:border-slate-500 hover:bg-shell-700 hover:text-white;
+  }
+
+  .toolbar-button {
+    @apply inline-flex h-8 items-center gap-2 border border-shell-600 bg-shell-800 px-3 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:bg-shell-700 hover:text-white;
+  }
+
+  .pairing-shell {
+    @apply w-full max-w-[520px] border border-shell-700 bg-shell-900/95 px-8 py-8 shadow-2xl shadow-black/40;
+  }
+
+  .stream-loader {
+    @apply border border-shell-700 bg-shell-900 px-7 py-6 shadow-2xl shadow-black/50;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 240ms ease-out both;
+}

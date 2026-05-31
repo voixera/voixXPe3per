@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>voiXPe3per Pair</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <p class="eyebrow">Pairing room</p>
+        <h1 id="room">-</h1>
+        <p id="summary">Membaca payload pairing...</p>
+
+        <div class="grid">
+          <div>
+            <span>Mode</span>
+            <strong id="mode">-</strong>
+          </div>
+          <div>
+            <span>Relay</span>
+            <strong id="relay">-</strong>
+          </div>
+        </div>
+
+        <textarea id="payload" readonly></textarea>
+        <button class="button" id="copy" type="button">Copy payload</button>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const payload = {
+        mode: params.get("mode") || "relay",
+        relay: params.get("relay") || "",
+        room: params.get("room") || "",
+        host: params.get("host") || "",
+        port: Number(params.get("port") || 8080),
+        token: params.get("token") || ""
+      };
+
+      document.getElementById("room").textContent = payload.room || "No room";
+      document.getElementById("mode").textContent = payload.mode;
+      document.getElementById("relay").textContent = payload.relay || `${payload.host}:${payload.port}`;
+      document.getElementById("summary").textContent =
+        payload.mode === "relay"
+          ? "Gunakan aplikasi Android voiXPe3per untuk scan QR dari desktop. iOS Camera menampilkan halaman ini karena QR sekarang berupa URL."
+          : "Mode LAN lama. Android bisa membaca payload dari URL ini.";
+      document.getElementById("payload").value = JSON.stringify(payload, null, 2);
+      document.getElementById("copy").addEventListener("click", async () => {
+        await navigator.clipboard.writeText(JSON.stringify(payload));
+      });
+    </script>
+  </body>
+</html>
