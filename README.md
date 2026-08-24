@@ -16,6 +16,18 @@ phone-mirror/
 
 ## Desktop
 
+### Install Windows via PowerShell
+
+Buka PowerShell biasa, lalu jalankan satu perintah ini:
+
+```powershell
+irm https://raw.githubusercontent.com/voixera/voixXPe3per/main/scripts/install-windows.ps1 | iex
+```
+
+Link script: `https://raw.githubusercontent.com/voixera/voixXPe3per/main/scripts/install-windows.ps1`
+
+Script memasang Git, Go, Node.js LTS, WinLibs GCC, dan Wails bila belum ada. Lalu script clone source, build EXE, dan memasang perintah `voixpe3per` global. Membutuhkan `winget`, koneksi internet, dan ruang disk untuk build.
+
 Prerequisite:
 
 - Go 1.22+
