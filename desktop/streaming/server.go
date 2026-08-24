@@ -82,15 +82,27 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	s.done = make(chan struct{})
+	s.startMetrics()
 	go func() {
 		if err := s.httpServer.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			// The Wails layer reports startup failures through the first request path.
 		}
 	}()
 
-	go s.publishFPS(s.done)
 	return nil
+}
+
+// StartRelay enables frame metrics without exposing a local HTTP/WebSocket port.
+func (s *Server) StartRelay() {
+	if s.done != nil {
+		return
+	}
+	s.startMetrics()
+}
+
+func (s *Server) startMetrics() {
+	s.done = make(chan struct{})
+	go s.publishFPS(s.done)
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {

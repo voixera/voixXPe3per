@@ -57,6 +57,7 @@ func (c *RelayClient) Start() error {
 		_ = c.writeJSON(map[string]string{"type": "stream.request_keyframe"})
 	})
 
+	go c.keepAlive(conn)
 	go c.readLoop(conn)
 	return nil
 }
@@ -81,6 +82,10 @@ func (c *RelayClient) readLoop(conn *websocket.Conn) {
 		}
 	}()
 
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(90 * time.Second))
+	})
+	_ = conn.SetReadDeadline(time.Now().Add(90 * time.Second))
 	for {
 		select {
 		case <-c.done:
@@ -88,7 +93,6 @@ func (c *RelayClient) readLoop(conn *websocket.Conn) {
 		default:
 		}
 
-		_ = conn.SetReadDeadline(time.Now().Add(90 * time.Second))
 		messageType, payload, err := conn.ReadMessage()
 		if err != nil {
 			return
@@ -102,6 +106,24 @@ func (c *RelayClient) readLoop(conn *websocket.Conn) {
 			c.deviceID = c.server.HandlePeerText(c.writeJSON, payload, c.deviceID)
 		case websocket.BinaryMessage:
 			c.server.HandlePeerFrame(payload)
+		}
+	}
+}
+
+func (c *RelayClient) keepAlive(conn *websocket.Conn) {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-c.done:
+			return
+		case <-ticker.C:
+			c.mu.Lock()
+			err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(5*time.Second))
+			c.mu.Unlock()
+			if err != nil {
+				return
+			}
 		}
 	}
 }

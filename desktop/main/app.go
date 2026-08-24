@@ -68,7 +68,9 @@ func (a *App) OnStartup(ctx context.Context) {
 	if err := a.pairing.StartSession(); err != nil {
 		runtime.LogErrorf(ctx, "pairing session failed: %v", err)
 	}
-	if err := a.server.Start(); err != nil {
+	if a.pairing.Snapshot().Mode == pairing.ModeRelay {
+		a.server.StartRelay()
+	} else if err := a.server.Start(); err != nil {
 		runtime.LogErrorf(ctx, "stream server failed: %v", err)
 	}
 	a.startRelayIfConfigured(ctx)
