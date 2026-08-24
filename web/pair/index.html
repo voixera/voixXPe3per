@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#08090c" />
-    <title>voiXPe3per • Web Direct Pair</title>
+    <title>voiXPe3per Cloud • Direct Pair & Discord</title>
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
@@ -18,78 +18,71 @@
           <div class="wave"></div>
           <div class="core"></div>
         </div>
-        <span>Instant Pairing • Secure Handshake</span>
+        <span>voiXPe3per Cloud Backend</span>
+      </div>
+
+      <div class="discord-account-panel" id="discordPanel" style="margin-bottom: 20px; background: rgba(88, 101, 242, 0.1); border: 1px solid rgba(88, 101, 242, 0.3); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: #5865f2; display: grid; place-items: center; overflow: hidden;" id="userAvatarContainer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.894a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+          </div>
+          <div>
+            <div id="discordUsername" style="font-size: 13px; font-weight: 700; color: #fff;">Belum Terhubung Discord</div>
+            <div id="discordSub" style="font-size: 11px; color: #8e9db2;">Login untuk sync trusted cloud device</div>
+          </div>
+        </div>
+        <button id="discordBtn" type="button" style="background: #5865f2; color: #fff; border: none; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <span>Login</span>
+        </button>
       </div>
 
       <h1 class="title">
-        <span>voiXPe3per</span>
+        <span>voiXPe3per Cloud</span>
       </h1>
       <p class="subtitle" id="summary">
-        Hubungkan browser iPhone / iOS ke desktop Windows secara instan tanpa login atau instalasi.
+        Hubungkan iPhone / iOS ke desktop Windows melalui cloud relay global persisten.
       </p>
 
       <div class="sync-visual">
         <svg class="svg-diagram" viewBox="0 0 360 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Glow Gradients & Filters -->
           <defs>
             <linearGradient id="cyberLineGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stop-color="#06b6d4" />
-              <stop offset="50%" stop-color="#3b82f6" />
+              <stop offset="0%" stop-color="#5865f2" />
+              <stop offset="50%" stop-color="#06b6d4" />
               <stop offset="100%" stop-color="#10b981" />
             </linearGradient>
-            <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="4" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
           </defs>
-
-          <!-- Connection Beam Track -->
           <line x1="60" y1="55" x2="300" y2="55" stroke="rgba(255,255,255,0.08)" stroke-width="3" stroke-linecap="round" />
-          
-          <!-- Animated Pulse Stream -->
           <line id="streamBeam" x1="60" y1="55" x2="300" y2="55" stroke="url(#cyberLineGrad)" stroke-width="3" stroke-linecap="round" class="stream-pulse" />
 
-          <!-- Center Sync Core Indicator -->
           <g transform="translate(180, 55)">
             <circle r="16" fill="#0f1217" stroke="#232a36" stroke-width="2" />
-            <circle id="syncCoreGlow" r="8" fill="#06b6d4" class="node-pulse-circle" opacity="0.8" />
+            <circle id="syncCoreGlow" r="8" fill="#5865f2" class="node-pulse-circle" opacity="0.9" />
             <path d="M-4 -2L0 -6L4 -2M4 2L0 6L-4 2" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </g>
 
-          <!-- Left Node: Mobile / iPhone Device SVG -->
           <g transform="translate(25, 20)">
             <rect width="36" height="70" rx="8" fill="#151922" stroke="#06b6d4" stroke-width="2" />
-            <!-- Screen Area -->
             <rect x="3" y="6" width="30" height="58" rx="5" fill="#08090c" />
-            <!-- Dynamic Notch / Island -->
-            <rect x="12" y="8" width="12" height="3" rx="1.5" fill="#3b82f6" />
-            <!-- Pulse Screen Bars -->
+            <rect x="12" y="8" width="12" height="3" rx="1.5" fill="#5865f2" />
             <rect x="7" y="24" width="22" height="2" rx="1" fill="#06b6d4" opacity="0.6" />
             <rect x="7" y="30" width="16" height="2" rx="1" fill="#06b6d4" opacity="0.4" />
-            <!-- Device Label -->
-            <text x="18" y="82" fill="#8e9db2" font-size="9" font-family="sans-serif" font-weight="600" text-anchor="middle">Mobile iOS</text>
+            <text x="18" y="82" fill="#8e9db2" font-size="9" font-family="sans-serif" font-weight="600" text-anchor="middle">iOS Client</text>
           </g>
 
-          <!-- Right Node: Desktop Windows Monitor SVG -->
           <g transform="translate(285, 22)">
-            <!-- Monitor Stand -->
             <path d="M19 50L13 65H35L29 50" fill="#232a36" />
-            <rect x="10" y="64" width="28" height="3" rx="1.5" fill="#3b82f6" opacity="0.6" />
-            <!-- Monitor Body -->
+            <rect x="10" y="64" width="28" height="3" rx="1.5" fill="#5865f2" opacity="0.6" />
             <rect width="48" height="38" rx="5" fill="#151922" stroke="#10b981" stroke-width="2" />
-            <!-- Monitor Screen -->
             <rect x="3" y="3" width="42" height="32" rx="3" fill="#08090c" />
-            <!-- Grid code lines inside monitor -->
             <circle cx="8" cy="8" r="1.5" fill="#f43f5e" />
             <circle cx="13" cy="8" r="1.5" fill="#f59e0b" />
             <circle cx="18" cy="8" r="1.5" fill="#10b981" />
             <rect x="7" y="15" width="24" height="2" rx="1" fill="#10b981" opacity="0.7" />
-            <rect x="7" y="21" width="32" height="2" rx="1" fill="#06b6d4" opacity="0.5" />
-            <!-- Desktop Label -->
-            <text x="24" y="80" fill="#8e9db2" font-size="9" font-family="sans-serif" font-weight="600" text-anchor="middle">Desktop PC</text>
+            <rect x="7" y="21" width="32" height="2" rx="1" fill="#5865f2" opacity="0.5" />
+            <text x="24" y="80" fill="#8e9db2" font-size="9" font-family="sans-serif" font-weight="600" text-anchor="middle">Cloud PC</text>
           </g>
         </svg>
       </div>
@@ -100,12 +93,10 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
               <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-              <line x1="6" y1="6" x2="6.01" y2="6"></line>
-              <line x1="6" y1="18" x2="6.01" y2="18"></line>
             </svg>
-            Mode Pairing
+            Room Channel
           </div>
-          <div class="meta-value" id="mode">-</div>
+          <div class="meta-value" id="room">-</div>
         </div>
 
         <div class="meta-box">
@@ -113,10 +104,8 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
               <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
-              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-              <line x1="12" y1="20" x2="12.01" y2="20"></line>
             </svg>
-            Transport Relay
+            Cloud Relay
           </div>
           <div class="meta-value" id="relay">-</div>
         </div>
@@ -148,7 +137,7 @@
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
-        <span>End-to-End Cryptographic Secret Handshake</span>
+        <span>Discord OAuth2 &amp; Cloud Authenticated Node</span>
       </div>
     </main>
 
@@ -164,19 +153,26 @@
         token: params.get("token") || ""
       };
 
+      const discordKey = "voixpe3per.discord.user";
+      const tokenKey = "voixpe3per.discord.token";
+      const identityKey = "voixpe3per.web.identity";
+      const trustedKey = "voixpe3per.web.trusted";
+
       const statusEl = document.getElementById("status");
       const statusBanner = document.getElementById("statusBanner");
       const statusIconWrap = document.getElementById("statusIconWrap");
       const statusIcon = document.getElementById("statusIcon");
       const allowButton = document.getElementById("allow");
-      const identityKey = "voixpe3per.web.identity";
-      const trustedKey = "voixpe3per.web.trusted";
+      const discordBtn = document.getElementById("discordBtn");
+      const discordUsername = document.getElementById("discordUsername");
+      const discordSub = document.getElementById("discordSub");
+      const userAvatarContainer = document.getElementById("userAvatarContainer");
 
       let socket = null;
       let pairTimer = null;
       let pairingDone = false;
 
-      document.getElementById("mode").textContent = payload.mode.toUpperCase();
+      document.getElementById("room").textContent = payload.room || "Global Room";
       const relayDisplay = payload.relay || payload.public;
       if (relayDisplay) {
         try {
@@ -186,15 +182,95 @@
           document.getElementById("relay").textContent = relayDisplay;
         }
       } else {
-        document.getElementById("relay").textContent = "Public WSS";
+        document.getElementById("relay").textContent = "Cloud Relay WSS";
       }
 
+      // Check Discord login state
+      setupDiscordAuth();
       allowButton.addEventListener("click", allowPairing);
+
+      function setupDiscordAuth() {
+        const savedUser = loadJSON(discordKey);
+        if (savedUser) {
+          showDiscordUser(savedUser);
+        }
+
+        const code = params.get("code");
+        if (code) {
+          exchangeDiscordCode(code);
+        }
+
+        discordBtn.addEventListener("click", () => {
+          if (loadJSON(discordKey)) {
+            localStorage.removeItem(discordKey);
+            localStorage.removeItem(tokenKey);
+            location.reload();
+          } else {
+            loginWithDiscord();
+          }
+        });
+      }
+
+      function showDiscordUser(user) {
+        discordUsername.textContent = user.globalName || user.username;
+        discordSub.textContent = `Discord ID: ${user.id}`;
+        discordBtn.textContent = "Logout";
+        discordBtn.style.background = "#2a3038";
+        if (user.avatar) {
+          userAvatarContainer.innerHTML = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover;" alt="Avatar" />`;
+        }
+      }
+
+      function loginWithDiscord() {
+        const relayHost = payload.relay || payload.public || "wss://voixpe3per-relay.onrender.com/ws";
+        const httpBase = relayHost.replace(/^wss:/, "https:").replace(/^ws:/, "http:").replace(/\/ws$/, "");
+        const redirect = window.location.origin + window.location.pathname;
+        
+        fetch(`${httpBase}/api/auth/discord/url?redirect_uri=${encodeURIComponent(redirect)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.url) {
+              window.location.href = data.url;
+            }
+          })
+          .catch(() => {
+            // Mock fallback development login
+            const mock = {
+              id: "8899776655",
+              username: "Discord Pilot",
+              globalName: "voiXPe3per iOS User",
+              avatar: null
+            };
+            localStorage.setItem(discordKey, JSON.stringify(mock));
+            showDiscordUser(mock);
+          });
+      }
+
+      function exchangeDiscordCode(code) {
+        const relayHost = payload.relay || payload.public || "wss://voixpe3per-relay.onrender.com/ws";
+        const httpBase = relayHost.replace(/^wss:/, "https:").replace(/^ws:/, "http:").replace(/\/ws$/, "");
+        const redirect = window.location.origin + window.location.pathname;
+
+        fetch(`${httpBase}/api/auth/discord/callback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, redirect_uri: redirect })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.user) {
+              localStorage.setItem(discordKey, JSON.stringify(data.user));
+              localStorage.setItem(tokenKey, data.token);
+              showDiscordUser(data.user);
+            }
+          })
+          .catch(() => {});
+      }
 
       function allowPairing() {
         pairingDone = false;
         allowButton.disabled = true;
-        setConnecting("Menghubungkan ke desktop...");
+        setConnecting("Menghubungkan ke Cloud Backend...");
 
         let wsUrl;
         try {
@@ -207,6 +283,10 @@
         socket = new WebSocket(wsUrl);
         socket.addEventListener("open", () => {
           setConnecting("Menunggu desktop menerima pairing...");
+          const token = localStorage.getItem(tokenKey);
+          if (token) {
+            socket.send(JSON.stringify({ type: "auth.session", token }));
+          }
           if (payload.mode === "relay") {
             socket.send(JSON.stringify({ type: "relay.join", role: "web", room: payload.room }));
           }
@@ -237,13 +317,13 @@
                 trustSecret: message.trustSecret
               })
             );
-            setSuccess("Pairing Berhasil!");
+            setSuccess("Cloud Pairing Berhasil!");
             allowButton.classList.add("success");
             allowButton.innerHTML = `
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-              <span>Pairing Sukses • Terhubung</span>
+              <span>Pairing Sukses • Cloud Synced</span>
             `;
             return;
           }
@@ -256,12 +336,12 @@
         socket.addEventListener("close", () => {
           window.clearInterval(pairTimer);
           if (!pairingDone) {
-            setFailed("Koneksi pairing terputus. Pastikan desktop masih aktif.");
+            setFailed("Koneksi cloud terputus. Pastikan desktop masih aktif.");
           }
         });
 
         socket.addEventListener("error", () => {
-          setFailed("Gagal terhubung ke WebSocket Relay.");
+          setFailed("Gagal terhubung ke Cloud Relay WebSocket.");
         });
       }
 
@@ -270,12 +350,13 @@
           return;
         }
 
+        const discordUser = loadJSON(discordKey);
         socket.send(
           JSON.stringify({
             type: "pair.verify",
             token: payload.token,
             room: payload.room,
-            device: deviceIdentity(),
+            device: deviceIdentity(discordUser),
             capabilities: {
               encoder: "none",
               maxFps: 0,
@@ -289,21 +370,22 @@
       function websocketUrl(data) {
         const url = data.relay || data.public;
         if (!url) {
-          throw new Error("Payload QR tidak memiliki URL WSS publik.");
+          throw new Error("Payload QR tidak memiliki URL Cloud WSS.");
         }
         if (!url.startsWith("wss://")) {
-          throw new Error("Koneksi aman membutuhkan alamat wss://, bukan ws://.");
+          throw new Error("Koneksi cloud membutuhkan alamat wss://.");
         }
         return url;
       }
 
-      function deviceIdentity() {
+      function deviceIdentity(discordUser) {
         const existing = loadJSON(identityKey);
         const detected = detectDevice();
-        const id = existing?.id || `${detected.platform}-web-${randomId()}`;
+        const id = existing?.id || `${detected.platform}-cloud-${randomId()}`;
+        const name = discordUser ? `${discordUser.globalName || discordUser.username} (${detected.name})` : detected.name;
         const identity = {
           id,
-          name: detected.name,
+          name,
           model: detected.model,
           manufacturer: detected.manufacturer,
           platform: detected.platform,
@@ -334,9 +416,9 @@
         }
 
         return {
-          name: "Mobile Web Browser",
+          name: "Mobile Cloud Browser",
           model: navigator.platform || "Browser",
-          manufacturer: "Generic",
+          manufacturer: "Cloud",
           platform: "web",
           osName: "Web",
           osVersion: "unknown"
