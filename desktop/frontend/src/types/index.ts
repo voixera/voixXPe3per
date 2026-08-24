@@ -30,6 +30,8 @@ export interface TrustedDevice {
   osVersion: string;
   androidVersion: string;
   streamCapable: boolean;
+  cameraOk: boolean;
+  micOk: boolean;
   status: DeviceStatus;
   lastSeen: string;
 }

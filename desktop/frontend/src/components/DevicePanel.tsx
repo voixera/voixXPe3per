@@ -38,6 +38,10 @@ export function DevicePanel({ devices }: { devices: TrustedDevice[] }) {
                   {" / "}
                   {device.platform}
                 </p>
+                <div className="mt-1 flex gap-3 pl-[21px]">
+                  <PermBadge label="CAM" ok={device.cameraOk} />
+                  <PermBadge label="MIC" ok={device.micOk} />
+                </div>
               </div>
               <button
                 className="mt-1 grid h-6 w-6 shrink-0 place-items-center text-dim/50 opacity-0 transition hover:text-alarm group-hover:opacity-100"
@@ -67,4 +71,13 @@ function platformLabel(platform: string) {
   if (platform === "web") return "Web";
   if (platform === "android") return "Android";
   return "Mobile";
+}
+
+function PermBadge({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-dim/70">
+      <span className={`led ${ok ? "on" : "off"}`} style={{ width: 5, height: 5 }} />
+      {label}
+    </span>
+  );
 }

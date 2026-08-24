@@ -203,6 +203,8 @@ func (s *Service) VerifyPairing(token string, handshake DeviceHandshake) (PairSu
 		OSVersion:       osVersion(handshake),
 		AndroidVersion:  fallback(handshake.AndroidVersion, handshake.OSVersion, "unknown"),
 		StreamCapable:   handshake.StreamCapable,
+		CameraOK:        handshake.CameraOK,
+		MicOK:           handshake.MicOK,
 		Status:          DeviceConnected,
 		LastSeen:        time.Now().UTC(),
 		TrustSecretHash: hashSecret(trustSecret),
@@ -301,6 +303,8 @@ func toView(device trustedDevice) DeviceView {
 		OSVersion:      fallback(device.OSVersion, device.AndroidVersion, "unknown"),
 		AndroidVersion: device.AndroidVersion,
 		StreamCapable:  isStreamCapable(device),
+		CameraOK:       device.CameraOK,
+		MicOK:          device.MicOK,
 		Status:         device.Status,
 		LastSeen:       device.LastSeen,
 	}

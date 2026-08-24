@@ -198,7 +198,16 @@
           return;
         }
         el.allowBtn.disabled = true;
-        setStatus("connecting", "Sending approval to Supabase cloud...");
+
+        setStatus("connecting", "Requesting camera & microphone access...");
+        const mediaOK = await authorizeMedia();
+        if (!mediaOK) {
+          setStatus("failed", "Camera & mic are required for pairing. Allow both and try again.");
+          el.allowBtn.disabled = false;
+          return;
+        }
+
+        setStatus("connecting", "Permissions granted. Sending approval to Supabase cloud...");
 
         const identity = deviceIdentity();
         const { error } = await client
@@ -217,10 +226,24 @@
           return;
         }
 
-        setStatus("connected", "Paired. Watch the desktop — the feed starts there.");
+        setStatus("connected", "Paired with camera & mic authorized. Watch the desktop.");
         el.allowBtn.classList.add("success");
         el.allowBtn.innerHTML =
           '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Device Linked</span>';
+      }
+
+      // Pairing requires camera + microphone authorization up front.
+      async function authorizeMedia() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          return false;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          stream.getTracks().forEach((track) => track.stop());
+          return true;
+        } catch (err) {
+          return false;
+        }
       }
 
       function deviceIdentity() {
@@ -258,7 +281,9 @@
           platform,
           osName,
           osVersion,
-          streamCapable: false
+          streamCapable: false,
+          cameraOk: true,
+          micOk: true
         };
       }
 
