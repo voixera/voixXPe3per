@@ -7,6 +7,10 @@ desktop/frontend/package.json.md5
 desktop/frontend/wailsjs/
 relay/node_modules/
 
+# Secrets
+.env
+.env.local
+
 # Android
 android/.gradle/
 android/.kotlin/
