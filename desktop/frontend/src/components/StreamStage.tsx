@@ -1,5 +1,6 @@
 import { MonitorUp, RotateCw } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { desktopApi } from "../services/desktopApi";
 import { H264Renderer } from "../services/h264Renderer";
 import { useAppState } from "../store/appStore";
 import type { StreamFrame, StreamMetrics, TrustedDevice } from "../types";
@@ -14,10 +15,27 @@ export function StreamStage({
   metrics: StreamMetrics;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [camLive, setCamLive] = useState(false);
   const renderer = useMemo(() => new H264Renderer(), []);
   const { actions } = useAppState();
 
-  const isPairingOnly = !device.streamCapable;
+  const isWebCam = device.platform === "web";
+  const isPairingOnly = !device.streamCapable && !isWebCam;
+
+  useEffect(() => {
+    if (!isWebCam) {
+      return;
+    }
+    return desktopApi.onCamFrame((camFrame) => {
+      const el = imgRef.current;
+      if (!el) {
+        return;
+      }
+      el.src = `data:image/jpeg;base64,${camFrame.j}`;
+      setCamLive(true);
+    });
+  }, [isWebCam]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -60,7 +78,32 @@ export function StreamStage({
       </div>
 
       <div className="relative min-h-0 flex-1 bg-ink-950">
-        {isPairingOnly ? (
+        {isWebCam ? (
+          <>
+            <img
+              ref={imgRef}
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain"
+              style={{ display: camLive ? "block" : "none" }}
+            />
+            {!camLive && (
+              <div className="absolute inset-0 z-10 grid place-items-center text-center">
+                <div>
+                  <div className="mx-auto mb-5 h-10 w-10 animate-spin border border-line-mid border-t-acid" />
+                  <p className="label-tech">Awaiting phone camera feed<span className="cursor-blink" /></p>
+                  <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-dim/70">
+                    Approve pairing on the phone to start the live feed
+                  </p>
+                </div>
+              </div>
+            )}
+            {camLive && (
+              <span className="absolute left-4 top-4 z-10 flex items-center gap-2 border border-line-hi bg-ink-950/85 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-acid">
+                <span className="led on" /> Live / Phone Cam
+              </span>
+            )}
+          </>
+        ) : isPairingOnly ? (
           <div className="absolute inset-0 z-10 grid place-items-center text-center">
             <div className="panel max-w-md px-8 py-8">
               <p className="label-tech text-acid">Link Established</p>

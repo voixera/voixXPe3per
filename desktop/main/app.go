@@ -30,6 +30,9 @@ type App struct {
 
 	watchMu    sync.Mutex
 	cancelWatch context.CancelFunc
+
+	camMu      sync.Mutex
+	camCancel  context.CancelFunc
 }
 
 type Snapshot struct {
@@ -239,6 +242,7 @@ func (a *App) watchCloudApprovals() {
 			}
 			_ = a.cloud.ConsumePairingSession(context.Background(), snapshot.Room)
 			runtime.LogInfo(a.ctx, "device approved via discord account")
+			a.startCamFeed(snapshot.Room)
 			a.stopWatch()
 			a.emitSnapshot()
 			return
@@ -252,6 +256,33 @@ func (a *App) stopWatch() {
 	if a.cancelWatch != nil {
 		a.cancelWatch()
 		a.cancelWatch = nil
+	}
+}
+
+// startCamFeed listens for the phone's camera broadcast on the room channel.
+func (a *App) startCamFeed(code string) {
+	if a.cloud == nil || code == "" {
+		return
+	}
+	a.stopCam()
+	ctx, cancel := context.WithCancel(context.Background())
+	a.camMu.Lock()
+	a.camCancel = cancel
+	a.camMu.Unlock()
+
+	a.cloud.StreamCam(ctx, code, func(frame cloud.CamFrame) {
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "cam.frame", frame)
+		}
+	})
+}
+
+func (a *App) stopCam() {
+	a.camMu.Lock()
+	defer a.camMu.Unlock()
+	if a.camCancel != nil {
+		a.camCancel()
+		a.camCancel = nil
 	}
 }
 

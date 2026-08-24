@@ -54,6 +54,12 @@ export interface StreamFrame {
   receivedAtNs: number;
 }
 
+export interface CamFrame {
+  j: string;
+  w: number;
+  h: number;
+}
+
 export interface DesktopSnapshot {
   pairing: PairingSession;
   devices: TrustedDevice[];

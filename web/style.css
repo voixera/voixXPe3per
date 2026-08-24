@@ -340,6 +340,36 @@ body {
   to { stroke-dashoffset: 0; }
 }
 
+/* local camera preview */
+.preview-wrap {
+  position: relative;
+  border: 1px solid var(--line-hi);
+  margin-bottom: 22px;
+  background: #000;
+}
+.preview-wrap video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+.live-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(7, 8, 7, 0.85);
+  border: 1px solid var(--line-hi);
+  padding: 5px 10px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--acid);
+}
+
 @media (max-width: 480px) {
   .meta-grid { grid-template-columns: 1fr; }
   .container { padding: 26px 20px; }
