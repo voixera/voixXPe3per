@@ -50,6 +50,14 @@ final class DesktopSocket {
         }
     }
 
+    func sendText(_ text: String) {
+        task?.send(.string(text)) { _ in }
+    }
+
+    func sendBinary(_ data: Data) {
+        task?.send(.data(data)) { _ in }
+    }
+
     func close() {
         task?.cancel(with: .normalClosure, reason: nil)
         task = nil

@@ -2,37 +2,156 @@
 <html lang="id">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>voiXPe3per Pair</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#08090c" />
+    <title>voiXPe3per • Web Direct Pair</title>
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="panel">
-        <p class="eyebrow">voiXPe3per Web Pairing</p>
-        <h1 id="room">-</h1>
-        <p id="summary">Membaca payload pairing...</p>
+    <div class="matrix-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
 
-        <div class="grid">
-          <div>
-            <span>Mode</span>
-            <strong id="mode">-</strong>
+    <main class="pairing-container">
+      <div class="header-badge">
+        <div class="radar-ping">
+          <div class="wave"></div>
+          <div class="core"></div>
+        </div>
+        <span>Instant Pairing • Secure Handshake</span>
+      </div>
+
+      <h1 class="title">
+        <span>voiXPe3per</span>
+      </h1>
+      <p class="subtitle" id="summary">
+        Hubungkan browser iPhone / iOS ke desktop Windows secara instan tanpa login atau instalasi.
+      </p>
+
+      <div class="sync-visual">
+        <svg class="svg-diagram" viewBox="0 0 360 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Glow Gradients & Filters -->
+          <defs>
+            <linearGradient id="cyberLineGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#06b6d4" />
+              <stop offset="50%" stop-color="#3b82f6" />
+              <stop offset="100%" stop-color="#10b981" />
+            </linearGradient>
+            <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Connection Beam Track -->
+          <line x1="60" y1="55" x2="300" y2="55" stroke="rgba(255,255,255,0.08)" stroke-width="3" stroke-linecap="round" />
+          
+          <!-- Animated Pulse Stream -->
+          <line id="streamBeam" x1="60" y1="55" x2="300" y2="55" stroke="url(#cyberLineGrad)" stroke-width="3" stroke-linecap="round" class="stream-pulse" />
+
+          <!-- Center Sync Core Indicator -->
+          <g transform="translate(180, 55)">
+            <circle r="16" fill="#0f1217" stroke="#232a36" stroke-width="2" />
+            <circle id="syncCoreGlow" r="8" fill="#06b6d4" class="node-pulse-circle" opacity="0.8" />
+            <path d="M-4 -2L0 -6L4 -2M4 2L0 6L-4 2" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+
+          <!-- Left Node: Mobile / iPhone Device SVG -->
+          <g transform="translate(25, 20)">
+            <rect width="36" height="70" rx="8" fill="#151922" stroke="#06b6d4" stroke-width="2" />
+            <!-- Screen Area -->
+            <rect x="3" y="6" width="30" height="58" rx="5" fill="#08090c" />
+            <!-- Dynamic Notch / Island -->
+            <rect x="12" y="8" width="12" height="3" rx="1.5" fill="#3b82f6" />
+            <!-- Pulse Screen Bars -->
+            <rect x="7" y="24" width="22" height="2" rx="1" fill="#06b6d4" opacity="0.6" />
+            <rect x="7" y="30" width="16" height="2" rx="1" fill="#06b6d4" opacity="0.4" />
+            <!-- Device Label -->
+            <text x="18" y="82" fill="#8e9db2" font-size="9" font-family="sans-serif" font-weight="600" text-anchor="middle">Mobile iOS</text>
+          </g>
+
+          <!-- Right Node: Desktop Windows Monitor SVG -->
+          <g transform="translate(285, 22)">
+            <!-- Monitor Stand -->
+            <path d="M19 50L13 65H35L29 50" fill="#232a36" />
+            <rect x="10" y="64" width="28" height="3" rx="1.5" fill="#3b82f6" opacity="0.6" />
+            <!-- Monitor Body -->
+            <rect width="48" height="38" rx="5" fill="#151922" stroke="#10b981" stroke-width="2" />
+            <!-- Monitor Screen -->
+            <rect x="3" y="3" width="42" height="32" rx="3" fill="#08090c" />
+            <!-- Grid code lines inside monitor -->
+            <circle cx="8" cy="8" r="1.5" fill="#f43f5e" />
+            <circle cx="13" cy="8" r="1.5" fill="#f59e0b" />
+            <circle cx="18" cy="8" r="1.5" fill="#10b981" />
+            <rect x="7" y="15" width="24" height="2" rx="1" fill="#10b981" opacity="0.7" />
+            <rect x="7" y="21" width="32" height="2" rx="1" fill="#06b6d4" opacity="0.5" />
+            <!-- Desktop Label -->
+            <text x="24" y="80" fill="#8e9db2" font-size="9" font-family="sans-serif" font-weight="600" text-anchor="middle">Desktop PC</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-box">
+          <div class="meta-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+            Mode Pairing
           </div>
-          <div>
-            <span>Relay</span>
-            <strong id="relay">-</strong>
-          </div>
+          <div class="meta-value" id="mode">-</div>
         </div>
 
-        <div class="status-box">
-          <span>Status</span>
-          <strong id="status">Siap pairing</strong>
+        <div class="meta-box">
+          <div class="meta-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+              <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+              <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+            Transport Relay
+          </div>
+          <div class="meta-value" id="relay">-</div>
         </div>
-        <div class="actions">
-          <button class="button button-primary" id="allow" type="button">Izinkan pairing</button>
+      </div>
+
+      <div class="status-pill-banner" id="statusBanner">
+        <div class="status-icon-wrap" id="statusIconWrap">
+          <svg id="statusIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
         </div>
-      </section>
+        <div class="status-details">
+          <div class="status-badge-title">Status Koneksi</div>
+          <div class="status-text" id="status">Siap Pairing</div>
+        </div>
+      </div>
+
+      <button class="btn-pair" id="allow" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg>
+        <span>Izinkan Pairing</span>
+      </button>
+
+      <div class="security-footer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>End-to-End Cryptographic Secret Handshake</span>
+      </div>
     </main>
+
     <script>
       const params = new URLSearchParams(window.location.search);
       const payload = {
@@ -44,26 +163,38 @@
         port: Number(params.get("port") || 8080),
         token: params.get("token") || ""
       };
+
       const statusEl = document.getElementById("status");
+      const statusBanner = document.getElementById("statusBanner");
+      const statusIconWrap = document.getElementById("statusIconWrap");
+      const statusIcon = document.getElementById("statusIcon");
       const allowButton = document.getElementById("allow");
       const identityKey = "voixpe3per.web.identity";
       const trustedKey = "voixpe3per.web.trusted";
+
       let socket = null;
       let pairTimer = null;
       let pairingDone = false;
 
-      document.getElementById("room").textContent = payload.room || "No room";
-      document.getElementById("mode").textContent = payload.mode;
-      document.getElementById("relay").textContent = payload.relay || payload.public || "WSS publik belum ada";
-      document.getElementById("summary").textContent =
-        "Klik Izinkan pairing untuk menghubungkan browser ini ke desktop lewat WSS publik. Tidak perlu satu jaringan.";
+      document.getElementById("mode").textContent = payload.mode.toUpperCase();
+      const relayDisplay = payload.relay || payload.public;
+      if (relayDisplay) {
+        try {
+          const parsed = new URL(relayDisplay.startsWith("ws") ? relayDisplay.replace(/^ws/, "http") : relayDisplay);
+          document.getElementById("relay").textContent = parsed.hostname;
+        } catch {
+          document.getElementById("relay").textContent = relayDisplay;
+        }
+      } else {
+        document.getElementById("relay").textContent = "Public WSS";
+      }
 
       allowButton.addEventListener("click", allowPairing);
 
       function allowPairing() {
         pairingDone = false;
         allowButton.disabled = true;
-        setStatus("Menghubungkan ke desktop...");
+        setConnecting("Menghubungkan ke desktop...");
 
         let wsUrl;
         try {
@@ -75,13 +206,14 @@
 
         socket = new WebSocket(wsUrl);
         socket.addEventListener("open", () => {
-          setStatus("Menunggu desktop menerima pairing...");
+          setConnecting("Menunggu desktop menerima pairing...");
           if (payload.mode === "relay") {
             socket.send(JSON.stringify({ type: "relay.join", role: "web", room: payload.room }));
           }
           sendPairVerify();
           pairTimer = window.setInterval(sendPairVerify, 2000);
         });
+
         socket.addEventListener("message", (event) => {
           let message;
           try {
@@ -105,23 +237,31 @@
                 trustSecret: message.trustSecret
               })
             );
-            setStatus("Pairing berhasil. Browser ini trusted, tetapi browser mobile tidak bisa mengirim stream H264 layar.");
-            allowButton.textContent = "Pairing berhasil";
+            setSuccess("Pairing Berhasil!");
+            allowButton.classList.add("success");
+            allowButton.innerHTML = `
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Pairing Sukses • Terhubung</span>
+            `;
             return;
           }
 
           if (message.type === "pair.failed" || message.type === "error" || message.type === "relay.error") {
-            setFailed(message.message || "Pairing gagal");
+            setFailed(message.message || "Pairing ditolak oleh desktop.");
           }
         });
+
         socket.addEventListener("close", () => {
           window.clearInterval(pairTimer);
           if (!pairingDone) {
-            setFailed("Koneksi pairing terputus. Pastikan desktop masih terbuka dan WSS publik/tunnel masih aktif.");
+            setFailed("Koneksi pairing terputus. Pastikan desktop masih aktif.");
           }
         });
+
         socket.addEventListener("error", () => {
-          setFailed("Tidak bisa connect ke relay. Pastikan QR memakai relay wss publik.");
+          setFailed("Gagal terhubung ke WebSocket Relay.");
         });
       }
 
@@ -149,10 +289,10 @@
       function websocketUrl(data) {
         const url = data.relay || data.public;
         if (!url) {
-          throw new Error("Payload QR tidak punya alamat WSS publik.");
+          throw new Error("Payload QR tidak memiliki URL WSS publik.");
         }
         if (!url.startsWith("wss://")) {
-          throw new Error("Pairing publik membutuhkan alamat wss://, bukan ws:// lokal.");
+          throw new Error("Koneksi aman membutuhkan alamat wss://, bukan ws://.");
         }
         return url;
       }
@@ -184,33 +324,45 @@
         if (isiOS) {
           const model = /iPad/.test(ua) || isiPadOS ? "iPad" : "iPhone";
           return {
-            name: `${model} ${browser}`,
+            name: `${model} (${browser})`,
             model,
             manufacturer: "Apple",
-            platform: "web",
+            platform: "ios",
             osName: "iOS",
-            osVersion: osMatch ? osMatch[1].replaceAll("_", ".") : "unknown"
+            osVersion: osMatch ? osMatch[1].replaceAll("_", ".") : "iOS"
           };
         }
 
         return {
-          name: "Web Browser",
+          name: "Mobile Web Browser",
           model: navigator.platform || "Browser",
-          manufacturer: "Web",
+          manufacturer: "Generic",
           platform: "web",
           osName: "Web",
           osVersion: "unknown"
         };
       }
 
-      function setStatus(message) {
-        statusEl.textContent = message;
+      function setConnecting(msg) {
+        statusEl.textContent = msg;
+        statusBanner.className = "status-pill-banner connecting";
+        statusIcon.setAttribute("stroke", "#06b6d4");
       }
 
-      function setFailed(message) {
+      function setSuccess(msg) {
+        statusEl.textContent = msg;
+        statusBanner.className = "status-pill-banner connected";
+        statusIcon.setAttribute("stroke", "#10b981");
+        statusIcon.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
+      }
+
+      function setFailed(msg) {
         window.clearInterval(pairTimer);
         allowButton.disabled = false;
-        setStatus(message);
+        statusEl.textContent = msg;
+        statusBanner.className = "status-pill-banner failed";
+        statusIcon.setAttribute("stroke", "#f43f5e");
+        statusIcon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
       }
 
       function loadJSON(key) {
@@ -223,9 +375,9 @@
 
       function randomId() {
         if (crypto.randomUUID) {
-          return crypto.randomUUID();
+          return crypto.randomUUID().slice(0, 8);
         }
-        return Math.random().toString(36).slice(2) + Date.now().toString(36);
+        return Math.random().toString(36).slice(2, 10);
       }
     </script>
   </body>

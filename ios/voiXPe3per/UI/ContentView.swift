@@ -28,6 +28,18 @@ struct ContentView: View {
                     .padding()
                     .background(Color(.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    VStack(spacing: 8) {
+                        Text("Mulai Screen Broadcast")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        BroadcastPickerRepresentable()
+                            .frame(width: 60, height: 60)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
                 VStack(spacing: 12) {

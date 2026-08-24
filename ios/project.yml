@@ -30,3 +30,25 @@ targets:
           - CFBundleURLName: com.voixpe3per.ios
             CFBundleURLSchemes:
               - voixpe3per
+    dependencies:
+      - target: voiXPe3perBroadcast
+
+  voiXPe3perBroadcast:
+    type: app-extension
+    platform: iOS
+    sources:
+      - voiXPe3perBroadcast
+      - path: voiXPe3per/Capture/H264Encoder.swift
+      - path: voiXPe3per/Network/FramePacket.swift
+      - path: voiXPe3per/Network/DesktopSocket.swift
+      - path: voiXPe3per/Security/TrustedDesktopStore.swift
+      - path: voiXPe3per/Security/KeychainSecretStore.swift
+      - path: voiXPe3per/Pairing/PairingPayload.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.voixpe3per.ios.broadcast
+        INFOPLIST_FILE: voiXPe3perBroadcast/Info.plist
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+    info:
+      path: voiXPe3perBroadcast/Info.plist

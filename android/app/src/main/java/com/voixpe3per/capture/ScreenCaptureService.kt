@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.media.projection.MediaProjection
 import android.os.Build
 import android.os.Handler
@@ -12,6 +13,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.WindowManager
+import androidx.core.app.ServiceCompat
 import com.voixpe3per.encoder.H264Encoder
 import com.voixpe3per.network.DesktopSocket
 import com.voixpe3per.network.FrameSender
@@ -30,9 +32,18 @@ class ScreenCaptureService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(42, notification())
+        ServiceCompat.startForeground(
+            this,
+            42,
+            notification(),
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            } else {
+                0
+            }
+        )
         val resultCode = intent?.getIntExtra(EXTRA_RESULT_CODE, 0) ?: return START_NOT_STICKY
-        val resultData = intent.getParcelableExtra<Intent>(EXTRA_RESULT_DATA) ?: return START_NOT_STICKY
+        val resultData = captureResultData(intent) ?: return START_NOT_STICKY
         connectAndStart(resultCode, resultData)
         return START_STICKY
     }
@@ -152,9 +163,18 @@ class ScreenCaptureService : Service() {
         }
         return Notification.Builder(this, channelId)
             .setContentTitle("voiXPe3per streaming")
-            .setContentText("Screen mirroring aktif di jaringan lokal")
+            .setContentText("Screen mirroring aktif lewat WSS publik")
             .setSmallIcon(android.R.drawable.presence_video_online)
             .build()
+    }
+
+    private fun captureResultData(intent: Intent): Intent? {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(EXTRA_RESULT_DATA, Intent::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(EXTRA_RESULT_DATA)
+        }
     }
 
     companion object {

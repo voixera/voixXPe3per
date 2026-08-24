@@ -36,3 +36,7 @@ type TrustedDevice struct {
 	Status   DeviceStatus `json:"status"`
 	LastSeen time.Time    `json:"lastSeen"`
 }
+ type pairingpayload struct
+  deviceidentity
+  status devicestatus jsons status
+  lastseen time.time json lastseen

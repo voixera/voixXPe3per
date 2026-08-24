@@ -93,18 +93,18 @@ class MainActivity : AppCompatActivity() {
     private fun attemptReconnect() {
         val trusted = trustedStore.load()
         if (trusted == null) {
-            statusText.text = "Status: belum ada trusted desktop"
+            setStatus("Status: belum ada trusted desktop")
             return
         }
 
-        statusText.text = "Status: reconnecting ${trusted.host}:${trusted.port}"
+        setStatus("Status: reconnecting ${trusted.url}")
         pairingRepository.reconnectTrusted(
             onReady = {
-                statusText.text = "Status: trusted desktop connected"
+                setStatus("Status: trusted desktop connected")
                 requestCapturePermission()
             },
             onError = { message ->
-                statusText.text = "Status: reconnect failed - $message"
+                setStatus("Status: reconnect failed - $message")
             }
         )
     }
@@ -128,14 +128,14 @@ class MainActivity : AppCompatActivity() {
             if (scan.contents != null) {
                 pair(scan.contents)
             } else {
-                statusText.text = "Status: QR scan cancelled"
+                setStatus("Status: QR scan cancelled")
             }
             return
         }
 
         if (requestCode == captureRequest && resultCode == Activity.RESULT_OK && data != null) {
             startCapture(resultCode, data)
-            statusText.text = "Status: streaming layar"
+            setStatus("Status: streaming layar")
             return
         }
 
@@ -144,21 +144,27 @@ class MainActivity : AppCompatActivity() {
 
     private fun pair(rawQr: String) {
         val payload = runCatching { PairingPayload.fromQr(rawQr) }.getOrElse {
-            statusText.text = "Status: QR tidak valid"
+            setStatus("Status: QR tidak valid")
             return
         }
 
-        statusText.text = "Status: pairing ${payload.host}:${payload.port}"
+        setStatus("Status: pairing ${payload.url}")
         pairingRepository.pair(
             payload = payload,
             onReady = {
-                statusText.text = "Status: pairing sukses"
+                setStatus("Status: pairing sukses")
                 requestCapturePermission()
             },
             onError = { message ->
-                statusText.text = "Status: pairing gagal - $message"
+                setStatus("Status: pairing gagal - $message")
             }
         )
+    }
+
+    private fun setStatus(message: String) {
+        runOnUiThread {
+            statusText.text = message
+        }
     }
 
     private fun requestNotificationPermission() {

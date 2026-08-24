@@ -28,6 +28,10 @@ class DesktopSocket {
             onError("QR harus memakai WSS publik")
             return
         }
+        if (!url.startsWith("wss://")) {
+            onError("QR harus memakai alamat wss:// publik")
+            return
+        }
 
         val request = Request.Builder()
             .url(url)
@@ -76,6 +80,10 @@ class DesktopSocket {
             onError("trusted desktop belum punya WSS publik")
             return
         }
+        if (!url.startsWith("wss://")) {
+            onError("trusted desktop masih memakai alamat lama, scan QR baru")
+            return
+        }
 
         val request = Request.Builder()
             .url(url)
@@ -119,6 +127,7 @@ class DesktopSocket {
 
         val capabilities = JSONObject()
             .put("encoder", "h264")
+            .put("canStream", true)
             .put("maxFps", 60)
 
         return JSONObject()

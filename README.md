@@ -137,15 +137,22 @@ cd phone-mirror
 ./scripts/build-android.sh
 ```
 
+Di Windows:
+
+```powershell
+cd phone-mirror
+powershell -ExecutionPolicy Bypass -File .\scripts\build-android.ps1
+```
+
 Android flow:
 
-1. Scan QR dari desktop.
-2. Connect ke relay `wss://<domain>/ws`.
-3. Join room dari QR dan kirim `pair.verify`.
-4. Simpan `trustSecret` setelah `pair.success`.
+1. Jalankan desktop dengan `scripts\start-public-wss.ps1`.
+2. Buka app Android voiXPe3per.
+3. Tap `Scan QR Pairing` dan scan QR dari desktop.
+4. Pairing ke WSS publik dan simpan `trustSecret`.
 5. Minta permission MediaProjection.
 6. Encode layar ke H264 low latency.
-7. Kirim frame binary ke desktop.
+7. Kirim frame binary ke desktop sampai layar muncul.
 
 Reconnect trusted device memakai `device.reconnect`, jadi scan QR hanya diperlukan untuk pairing pertama.
 
