@@ -34,6 +34,14 @@ const emptySnapshot: DesktopSnapshot = {
     frames: 0,
     updatedAt: new Date().toISOString(),
     resolution: "Auto"
+  },
+  auth: {
+    loggedIn: false,
+    email: "",
+    name: "",
+    avatar: "",
+    providerId: "",
+    cloudReady: true
   }
 };
 
@@ -56,6 +64,14 @@ export const desktopApi = {
 
   async toggleFullscreen(): Promise<void> {
     await window.go?.mainapp?.App?.ToggleFullscreen?.();
+  },
+
+  async loginWithDiscord(): Promise<void> {
+    await window.go?.mainapp?.App?.LoginWithDiscord?.();
+  },
+
+  async logout(): Promise<void> {
+    await window.go?.mainapp?.App?.Logout?.();
   },
 
   onSnapshot(callback: (snapshot: DesktopSnapshot) => void): () => void {

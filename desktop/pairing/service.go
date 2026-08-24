@@ -19,6 +19,7 @@ import (
 const (
 	ModeRelay  = "relay"
 	ModeDirect = "direct"
+	ModeCloud  = "cloud"
 
 	defaultPairingPageURL = "https://voixxpe3per.vercel.app/pair"
 	defaultRelayURL       = "wss://voixpe3per-relay.onrender.com/ws"
@@ -53,6 +54,35 @@ func (s *Service) StartSession() error {
 	}
 
 	return s.startRelaySession(relayURL)
+}
+
+// StartCloudSession builds a Supabase-backed pairing session. The returned
+// code is the room key the phone approves through the web pairing page.
+func (s *Service) StartCloudSession(hostName string) (string, error) {
+	code, err := randomRoom()
+	if err != nil {
+		return "", err
+	}
+
+	payload := PairingPayload{
+		Mode: ModeCloud,
+		Code: code,
+	}
+	qrTarget := pairingURL(payload)
+	png, err := qrcode.Encode(qrTarget, qrcode.Medium, 384)
+	if err != nil {
+		return "", err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.session = SessionSnapshot{
+		Mode:      ModeCloud,
+		Room:      code,
+		QRDataURL: "data:image/png;base64," + base64.StdEncoding.EncodeToString(png),
+		Status:    "Waiting for approval...",
+	}
+	return code, nil
 }
 
 func (s *Service) startDirectSession(publicURL string) error {
@@ -145,7 +175,7 @@ func (s *Service) VerifyPairing(token string, handshake DeviceHandshake) (PairSu
 	mode := s.session.Mode
 	s.mu.RUnlock()
 
-	if mode != ModeRelay && (token == "" || token != currentToken) {
+	if mode != ModeRelay && mode != ModeCloud && (token == "" || token != currentToken) {
 		return PairSuccess{}, fmt.Errorf("invalid pairing token")
 	}
 
@@ -306,6 +336,9 @@ func pairingURL(payload PairingPayload) string {
 	}
 	if payload.Room != "" {
 		query.Set("room", payload.Room)
+	}
+	if payload.Code != "" {
+		query.Set("code", payload.Code)
 	}
 	if payload.Host != "" {
 		query.Set("host", payload.Host)

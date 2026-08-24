@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from "react";
 import { desktopApi } from "../services/desktopApi";
-import type { DesktopSnapshot, StreamFrame, StreamMetrics } from "../types";
+import type { AuthIdentity, DesktopSnapshot, StreamFrame, StreamMetrics } from "../types";
 
 type AppState = DesktopSnapshot & {
   latestFrame: StreamFrame | null;
@@ -22,7 +22,7 @@ const initialState: AppState = {
     relayUrl: "",
     room: "",
     qrDataUrl: "",
-    status: "Waiting for device..."
+    status: "Standby"
   },
   devices: [],
   metrics: {
@@ -33,6 +33,14 @@ const initialState: AppState = {
     frames: 0,
     updatedAt: new Date().toISOString(),
     resolution: "Auto"
+  },
+  auth: {
+    loggedIn: false,
+    email: "",
+    name: "",
+    avatar: "",
+    providerId: "",
+    cloudReady: true
   },
   latestFrame: null,
   booting: true
@@ -46,6 +54,8 @@ const AppStateContext = createContext<
         refreshStream(): Promise<void>;
         toggleFullscreen(): Promise<void>;
         forgetDevice(deviceId: string): Promise<void>;
+        loginWithDiscord(): Promise<void>;
+        logout(): Promise<void>;
       };
     }
   | undefined
@@ -77,6 +87,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const actions = useMemo(
     () => ({
+      async loginWithDiscord() {
+        await desktopApi.loginWithDiscord();
+      },
+      async logout() {
+        await desktopApi.logout();
+        const snapshot = await desktopApi.getSnapshot();
+        dispatch({ type: "snapshot", snapshot });
+      },
       async refreshPairing() {
         const pairing = await desktopApi.refreshPairing();
         dispatch({
@@ -84,7 +102,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           snapshot: {
             pairing,
             devices: state.devices,
-            metrics: state.metrics
+            metrics: state.metrics,
+            auth: state.auth
           }
         });
       },
@@ -100,7 +119,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "snapshot", snapshot });
       }
     }),
-    [state.devices, state.metrics]
+    [state.devices, state.metrics, state.auth]
   );
 
   return <AppStateContext.Provider value={{ state, actions }}>{children}</AppStateContext.Provider>;
@@ -117,7 +136,7 @@ export function useAppState() {
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case "snapshot":
-      return { ...state, ...action.snapshot, booting: false };
+      return { ...state, ...action.snapshot, auth: action.snapshot.auth ?? state.auth, booting: false };
     case "metrics":
       return { ...state, metrics: action.metrics };
     case "frame":

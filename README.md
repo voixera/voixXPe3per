@@ -1,6 +1,6 @@
-# voiXPe3per
+# voiXPe3per (PeeperPhone)
 
-voiXPe3per adalah starter project untuk mirroring layar Android/iOS ke desktop Windows. Mode default memakai relay WebSocket publik, jadi mobile device dan desktop tidak harus berada di jaringan yang sama. Desktop menampilkan QR pairing, browser mobile membuka halaman Vercel, lalu user cukup klik `Izinkan pairing`.
+voiXPe3per adalah starter project untuk mirroring layar Android/iOS ke desktop Windows. Login memakai Discord OAuth melalui Supabase, pairing disimpan di Supabase (cloud), jadi tidak ada backend lokal yang harus dijalankan. Desktop menampilkan QR pairing, browser mobile membuka halaman web, lalu user klik `Approve Pairing`.
 
 ## Struktur
 
@@ -10,9 +10,24 @@ phone-mirror/
   android/   Kotlin Android app, ZXing QR scanner, MediaProjection, H264 encoder
   ios/       Optional SwiftUI native client untuk pengembangan lanjutan
   web/       Vercel pairing page tanpa install aplikasi
+  supabase/  Schema SQL untuk tabel pairing_sessions (+ RLS)
   shared/    Protocol docs, JSON schema, shared model contracts
   scripts/   Build helpers
 ```
+
+## Setup Supabase + Discord (sekali saja)
+
+1. Buat project Supabase, lalu jalankan isi `supabase/schema.sql` di SQL Editor.
+2. Dashboard -> Authentication -> Providers -> aktifkan **Discord**, isi Client ID / Secret dari Discord Developer Portal (OAuth2 app).
+3. Dashboard -> Authentication -> URL Configuration:
+   - Site URL: domain Vercel kamu.
+   - Redirect URLs: `https://DOMAIN.vercel.app/pair` **dan** `http://localhost:8971/auth/callback` (untuk login desktop).
+4. Isi `SUPABASE_URL` dan `SUPABASE_ANON_KEY` di `.env`, dan edit nilai yang sama di `web/config.js`.
+5. Deploy folder `web/` ke Vercel.
+
+Login desktop: buka EXE -> tombol **Continue with Discord** -> browser terbuka -> selesai. Token disimpan di `%AppData%\peeperphone\session.json`.
+
+Flow pairing: QR berisi link `/pair?code=XXXX`. Browser login Discord, klik approve, baris `pairing_sessions` di-update; desktop polling row tersebut dan mendaftarkan device sebagai trusted.
 
 ## Desktop
 

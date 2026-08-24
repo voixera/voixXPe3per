@@ -18,7 +18,7 @@ func main() {
 	app := mainapp.NewApp()
 
 	err := wails.Run(&options.App{
-		Title:     "voiXPe3per",
+		Title:     "PeeperPhone",
 		Width:     1220,
 		Height:    760,
 		MinWidth:  980,
@@ -26,7 +26,7 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 18, G: 19, B: 22, A: 1},
+		BackgroundColour: &options.RGBA{R: 7, G: 8, B: 7, A: 1},
 		OnStartup:        app.OnStartup,
 		OnShutdown:       app.OnShutdown,
 		Bind: []interface{}{

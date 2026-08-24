@@ -4,11 +4,20 @@ export interface PairingSession {
   host: string;
   port: number;
   token: string;
-  mode: "relay" | "direct";
+  mode: "relay" | "direct" | "cloud";
   relayUrl: string;
   room: string;
   qrDataUrl: string;
   status: string;
+}
+
+export interface AuthIdentity {
+  loggedIn: boolean;
+  email: string;
+  name: string;
+  avatar: string;
+  providerId: string;
+  cloudReady: boolean;
 }
 
 export interface TrustedDevice {
@@ -47,6 +56,7 @@ export interface DesktopSnapshot {
   pairing: PairingSession;
   devices: TrustedDevice[];
   metrics: StreamMetrics;
+  auth: AuthIdentity;
 }
 
 export interface WailsDesktopApi {
@@ -55,6 +65,8 @@ export interface WailsDesktopApi {
   ForgetDevice(deviceId: string): Promise<void>;
   RefreshStream(): Promise<void>;
   ToggleFullscreen(): Promise<void> | void;
+  LoginWithDiscord(): Promise<void>;
+  Logout(): Promise<void>;
 }
 
 export interface WailsRuntime {

@@ -17,6 +17,7 @@ type PairingPayload struct {
 	Relay  string `json:"relay,omitempty"`
 	Public string `json:"public,omitempty"`
 	Room   string `json:"room,omitempty"`
+	Code   string `json:"code,omitempty"`
 }
 
 type SessionSnapshot struct {

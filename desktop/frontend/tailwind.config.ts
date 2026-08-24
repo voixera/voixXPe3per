@@ -5,27 +5,32 @@ export default {
   theme: {
     extend: {
       colors: {
-        shell: {
-          950: "#0f1013",
-          900: "#14161a",
-          850: "#191c21",
-          800: "#1f2329",
-          700: "#2a3038",
-          600: "#3a424d"
+        ink: {
+          950: "#070807",
+          900: "#0a0b09",
+          850: "#0e100d",
+          800: "#12140f",
+          700: "#191c15",
+          600: "#23271e",
+          500: "#323827"
         },
-        signal: {
-          green: "#4fd18b",
-          amber: "#f3b454",
-          red: "#ff6b6b",
-          cyan: "#66d9ef"
-        }
-      },
-      boxShadow: {
-        insetPanel: "inset 0 1px 0 rgba(255,255,255,0.04)"
+        line: {
+          dim: "#1c2018",
+          mid: "#2c3325",
+          hi: "#46503a"
+        },
+        acid: {
+          DEFAULT: "#c6f542",
+          soft: "#dcff7a"
+        },
+        bone: "#e6ecdd",
+        dim: "#7d8570",
+        amber: "#ffb224",
+        alarm: "#ff5d45"
       },
       fontFamily: {
-        sans: ["Inter", "Segoe UI", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "Consolas", "monospace"]
+        display: ["Bahnschrift", "Arial Narrow", "Segoe UI", "sans-serif"],
+        mono: ["JetBrains Mono", "Consolas", "ui-monospace", "monospace"]
       }
     }
   },
