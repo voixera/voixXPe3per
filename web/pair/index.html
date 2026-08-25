@@ -90,7 +90,7 @@
 
       <div id="previewWrap" class="preview-wrap" style="display:none">
         <video id="localVideo" autoplay muted playsinline></video>
-        <span class="live-badge"><span class="led on"></span>LIVE</span>
+        <span class="live-badge"><span class="led on"></span>LIVE · SENT <b id="sentCount">0</b></span>
       </div>
 
       <button class="btn-hard" id="allowBtn" type="button" disabled>
@@ -352,7 +352,10 @@
         const video = document.getElementById("localVideo");
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
+        const sentEl = document.getElementById("sentCount");
 
+        let sent = 0;
+        let failed = false;
         sendRef = () => {
           if (!video.videoWidth) return;
           const scale = Math.min(1, CAM_WIDTH / video.videoWidth);
@@ -360,29 +363,30 @@
           canvas.height = Math.round(video.videoHeight * scale);
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const jpeg = canvas.toDataURL("image/jpeg", CAM_QUALITY).split(",")[1];
-          channel.send({ type: "broadcast", event: "cam", payload: { j: jpeg, w: canvas.width, h: canvas.height } });
+          try {
+            channel.send({ type: "broadcast", event: "cam", payload: { j: jpeg, w: canvas.width, h: canvas.height } });
+            sent++;
+            if (sentEl) sentEl.textContent = String(sent);
+          } catch (err) {
+            if (!failed) {
+              failed = true;
+              setStatus("failed", "Send failed: " + (err && err.message ? err.message : String(err)));
+            }
+          }
         };
 
-        // Drive from actual video frames when supported; fall back to timer.
-        let scheduled = false;
-        const loop = () => {
-          if (scheduled) return;
-          scheduled = true;
-          video.requestVideoFrameCallback(() => {
-            scheduled = false;
-            if (document.hidden || !video.videoWidth) return;
-            try { sendRef(); } catch (err) {}
-            loop();
-          });
-        };
-        if (video.requestVideoFrameCallback) {
-          video.play().then(loop).catch(() => {});
-        }
+        // Plain timer pump. Background tabs throttle this to ~1fps, and
+        // visibilitychange bumps it straight back — no loops that die.
         setInterval(() => {
-          if (!document.hidden && !video.requestVideoFrameCallback) {
+          try { sendRef(); } catch (err) {}
+        }, Math.round(1000 / CAM_FPS));
+        // First frame as soon as the camera produces one.
+        const ready = setInterval(() => {
+          if (video.videoWidth) {
+            clearInterval(ready);
             try { sendRef(); } catch (err) {}
           }
-        }, Math.round(1000 / CAM_FPS));
+        }, 200);
       }
 
       function showLocalPreview() {

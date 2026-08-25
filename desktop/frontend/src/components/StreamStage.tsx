@@ -141,8 +141,14 @@ export function StreamStage({
             {!camFrame && (
               <Spinner
                 line1="Awaiting phone camera"
-                line2="Keep the pairing page open on the phone"
+                line2={state.camFrames > 0 ? undefined : "Keep the pairing page open on the phone"}
               />
+            )}
+            {state.camFrames > 0 && !camFrame && null}
+            {!camFrame && state.camStatus && (
+              <p className={`mt-2 font-mono text-[10px] ${state.camStatus === "SUBSCRIBED" ? "text-dim/70" : "text-amber"}`}>
+                RT: {state.camStatus} · FRM {state.camFrames}
+              </p>
             )}
             {camFrame && <PaneBadge text="Camera" />}
             {stalled && (
