@@ -390,6 +390,8 @@
         const sentEl = document.getElementById("sentCount");
 
         let sent = 0;
+        let tick = 0;
+        let storageFailed = false;
         let failed = false;
         sendRef = () => {
           if (!video.videoWidth) return;
@@ -407,6 +409,26 @@
               failed = true;
               setStatus("failed", "Send failed: " + (err && err.message ? err.message : String(err)));
             }
+          }
+
+          // Storage transport: guaranteed delivery path the desktop polls.
+          // Realtime may be flaky; this one is plain HTTP both sides.
+          tick++;
+          if (tick % 2 === 0) {
+            canvas.toBlob(async (blob) => {
+              if (!blob || storageFailed) return;
+              const { error } = await client.storage
+                .from("peeper-cam")
+                .upload(`${roomCode}.jpg`, blob, {
+                  upsert: true,
+                  contentType: "image/jpeg",
+                  cacheControl: "0"
+                });
+              if (error && !storageFailed) {
+                storageFailed = true;
+                setStatus("connecting", "Storage relay inactive (" + error.message.slice(0, 60) + ") — using realtime only.");
+              }
+            }, "image/jpeg", CAM_QUALITY);
           }
         };
 

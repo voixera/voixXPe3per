@@ -29,3 +29,18 @@ create policy "session update authenticated"
   on public.pairing_sessions for update to authenticated
   using (true)
   with check (true);
+
+-- Camera frame relay: phone overwrites one JPEG per room, desktop polls it.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('peeper-cam', 'peeper-cam', true, 1048576)
+on conflict (id) do nothing;
+
+drop policy if exists "peeper cam upload" on storage.objects;
+create policy "peeper cam upload"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'peeper-cam');
+
+drop policy if exists "peeper cam overwrite" on storage.objects;
+create policy "peeper cam overwrite"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'peeper-cam');

@@ -165,7 +165,7 @@ export function StreamStage({
         <span>{metrics.codec || "H264"}</span>
         {camFrame ? (
           <>
-            <span>CAM <b className="text-acid">{camFrame.w}x{camFrame.h}</b></span>
+            <span>CAM {camFrame.w > 0 ? <b className="text-acid">{camFrame.w}x{camFrame.h}</b> : ""}</span>
             <span>FRM <b className="text-acid">{state.camFrames}</b></span>
           </>
         ) : (

@@ -89,12 +89,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const disposeSnapshot = desktopApi.onSnapshot((snapshot) => dispatch({ type: "snapshot", snapshot }));
     const disposeMetrics = desktopApi.onMetrics((metrics) => dispatch({ type: "metrics", metrics }));
     const disposeFrame = desktopApi.onFrame((frame) => dispatch({ type: "frame", frame }));
+    const disposeGoCam = desktopApi.onCamFrame((frame) => dispatch({ type: "cam-frame", frame }));
 
     return () => {
       disposed = true;
       disposeSnapshot();
       disposeMetrics();
       disposeFrame();
+      disposeGoCam();
     };
   }, []);
 

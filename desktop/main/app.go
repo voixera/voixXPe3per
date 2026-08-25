@@ -2,6 +2,7 @@ package mainapp
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,6 +35,7 @@ type App struct {
 	cancelWatch context.CancelFunc
 
 	camMu     sync.Mutex
+	camCancel context.CancelFunc
 	camActive bool
 }
 
@@ -209,7 +211,7 @@ func (a *App) refreshPairingInternal() {
 		if saved := loadActiveSession(); saved != nil && a.pairing.HasDevice(saved.DeviceID) {
 			if err := a.pairing.StartCloudSessionWithRoom(saved.Room); err == nil {
 				if a.pairing.ConnectDevice(saved.DeviceID) {
-					a.markCamActive()
+					a.startCamFeed(saved.Room)
 					return
 				}
 			}
@@ -288,7 +290,7 @@ func (a *App) watchCloudApprovals() {
 			_ = a.cloud.ConsumePairingSession(context.Background(), snapshot.Room)
 			saveActiveSession(snapshot.Room, handshake.ID)
 			runtime.LogInfo(a.ctx, "device approved via discord account")
-			a.markCamActive()
+			a.startCamFeed(snapshot.Room)
 			a.stopWatch()
 			a.emitSnapshot()
 			return
@@ -305,18 +307,46 @@ func (a *App) stopWatch() {
 	}
 }
 
-// markCamActive flips the UI into camera-await mode. Frames themselves are
-// received by the frontend webview over Supabase Realtime (supabase-js),
-// because Cloudflare blocks non-browser websocket clients to Realtime.
-func (a *App) markCamActive() {
+// startCamFeed polls Supabase Storage for the phone's latest camera JPEG
+// (guaranteed HTTP path) and emits cam.frame events to the webview. The
+// frontend also subscribes to Realtime directly — whichever delivers wins.
+func (a *App) startCamFeed(code string) {
+	if a.cloud == nil || code == "" {
+		return
+	}
+	a.stopCam()
+	ctx, cancel := context.WithCancel(context.Background())
 	a.camMu.Lock()
-	defer a.camMu.Unlock()
+	a.camCancel = cancel
 	a.camActive = true
+	a.camMu.Unlock()
+
+	frames := 0
+	go func() {
+		a.cloud.PollCamJPEG(ctx, code, func(jpeg []byte) {
+			frames++
+			if frames == 1 {
+				runtime.LogInfo(a.ctx, "camera feed connected via storage")
+				a.emitSnapshot()
+			}
+			if a.ctx != nil {
+				runtime.EventsEmit(a.ctx, "cam.frame", map[string]interface{}{
+					"j": base64.StdEncoding.EncodeToString(jpeg),
+					"w": 0,
+					"h": 0,
+				})
+			}
+		})
+	}()
 }
 
 func (a *App) stopCam() {
 	a.camMu.Lock()
 	defer a.camMu.Unlock()
+	if a.camCancel != nil {
+		a.camCancel()
+		a.camCancel = nil
+	}
 	a.camActive = false
 }
 

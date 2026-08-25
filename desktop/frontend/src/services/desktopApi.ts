@@ -1,4 +1,4 @@
-import type { DesktopSnapshot, PairingSession, StreamFrame, StreamMetrics } from "../types";
+import type { CamFrame, DesktopSnapshot, PairingSession, StreamFrame, StreamMetrics } from "../types";
 
 const emptySnapshot: DesktopSnapshot = {
   pairing: {
@@ -93,5 +93,9 @@ export const desktopApi = {
 
   onMetrics(callback: (metrics: StreamMetrics) => void): () => void {
     return window.runtime?.EventsOn?.("stream.metrics", callback) ?? (() => undefined);
+  },
+
+  onCamFrame(callback: (frame: CamFrame) => void): () => void {
+    return window.runtime?.EventsOn?.("cam.frame", callback) ?? (() => undefined);
   }
 };
