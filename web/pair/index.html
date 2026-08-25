@@ -91,6 +91,13 @@
       <div id="previewWrap" class="preview-wrap" style="display:none">
         <video id="localVideo" autoplay muted playsinline></video>
         <span class="live-badge"><span class="led on"></span>LIVE · SENT <b id="sentCount">0</b></span>
+        <button id="swapBtn" class="swap-btn" type="button">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          SWAP CAM
+        </button>
       </div>
 
       <button class="btn-hard" id="allowBtn" type="button" disabled>
@@ -175,6 +182,9 @@
         });
 
         el.allowBtn.addEventListener("click", approve);
+        document.getElementById("swapBtn").addEventListener("click", () => {
+          void swapCamera();
+        });
       }
 
       function displayName(meta) {
@@ -272,21 +282,46 @@
       // Pairing requires camera + microphone authorization up front.
       // The camera stays open after approval and feeds the desktop.
       let camStream = null;
+      let facing = "environment";
+
+      async function openCamera() {
+        // Try requested lens, then any available one (older iPhones etc).
+        for (const mode of [facing, undefined]) {
+          try {
+            return await navigator.mediaDevices.getUserMedia({
+              video: mode ? { width: { ideal: 720 }, facingMode: mode } : { width: { ideal: 720 } },
+              audio: true
+            });
+          } catch (err) { /* next */ }
+        }
+        return null;
+      }
+
       async function authorizeMedia() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           return false;
         }
-        try {
-          if (!camStream) {
-            camStream = await navigator.mediaDevices.getUserMedia({
-              video: { width: { ideal: 720 }, facingMode: "environment" },
-              audio: true
-            });
-          }
-          return true;
-        } catch (err) {
-          camStream = null;
-          return false;
+        if (!camStream) {
+          camStream = await openCamera();
+        }
+        return !!camStream;
+      }
+
+      async function swapCamera() {
+        if (!camStream) return;
+        const video = document.getElementById("localVideo");
+        const previous = facing;
+        facing = previous === "environment" ? "user" : "environment";
+        camStream.getTracks().forEach((track) => track.stop());
+        camStream = await openCamera();
+        if (!camStream) {
+          facing = previous;
+          camStream = await openCamera();
+          setStatus("failed", "Camera switch failed, reverted.");
+        }
+        if (video && camStream) {
+          video.srcObject = camStream;
+          video.play().catch(() => {});
         }
       }
 

@@ -370,6 +370,24 @@ body {
   color: var(--acid);
 }
 
+.swap-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line-hi);
+  background: rgba(7, 8, 7, 0.85);
+  color: var(--bone);
+  cursor: pointer;
+  padding: 5px 10px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+.swap-btn:active { background: var(--acid); color: var(--ink); }
+
 @media (max-width: 480px) {
   .meta-grid { grid-template-columns: 1fr; }
   .container { padding: 26px 20px; }
