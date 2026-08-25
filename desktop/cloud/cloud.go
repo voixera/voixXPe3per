@@ -99,6 +99,8 @@ type Identity struct {
 	Avatar      string `json:"avatar"`
 	ProviderID  string `json:"providerId"`
 	CloudReady  bool   `json:"cloudReady"`
+	SupabaseURL string `json:"supabaseUrl"`
+	AnonKey     string `json:"anonKey"`
 }
 
 // RemoteSession mirrors one row of public.pairing_sessions.
@@ -292,12 +294,14 @@ func (c *Client) hydrateUserLocked() {
 		name = c.tokens.User.Email
 	}
 	c.identity = Identity{
-		LoggedIn:   c.tokens.AccessToken != "",
-		Email:      c.tokens.User.Email,
-		Name:       name,
-		Avatar:     get("avatar_url"),
-		ProviderID: get("provider_id"),
-		CloudReady: c.baseURL != "" && c.apiKey != "",
+		LoggedIn:    c.tokens.AccessToken != "",
+		Email:       c.tokens.User.Email,
+		Name:        name,
+		Avatar:      get("avatar_url"),
+		ProviderID:  get("provider_id"),
+		CloudReady:  c.baseURL != "" && c.apiKey != "",
+		SupabaseURL: c.baseURL,
+		AnonKey:     c.apiKey,
 	}
 }
 

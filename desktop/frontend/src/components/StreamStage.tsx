@@ -85,6 +85,9 @@ export function StreamStage({
                   <p className="mt-3 max-w-xs font-mono text-[10px] leading-relaxed uppercase tracking-[0.16em] text-dim/70">
                     Keep the pairing page open on the phone with the screen on
                   </p>
+                  {state.camStatus && state.camStatus !== "SUBSCRIBED" && (
+                    <p className="mt-3 font-mono text-[10px] text-amber">RT: {state.camStatus}</p>
+                  )}
                 </>
               ) : !device.streamCapable ? (
                 <p className="label-tech">Link established — no stream from this device</p>

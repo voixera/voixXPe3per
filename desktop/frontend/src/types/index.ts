@@ -18,6 +18,8 @@ export interface AuthIdentity {
   avatar: string;
   providerId: string;
   cloudReady: boolean;
+  supabaseUrl: string;
+  anonKey: string;
 }
 
 export interface TrustedDevice {

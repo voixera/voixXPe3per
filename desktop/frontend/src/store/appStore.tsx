@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from "react";
 import { desktopApi } from "../services/desktopApi";
+import { subscribeCam } from "../services/supabaseCam";
 import type { AuthIdentity, CamFrame, DesktopSnapshot, StreamFrame, StreamMetrics } from "../types";
 
 type AppState = DesktopSnapshot & {
   latestFrame: StreamFrame | null;
   camFrame: CamFrame | null;
   camFrames: number;
+  camStatus: string;
   booting: boolean;
 };
 
@@ -14,6 +16,7 @@ type Action =
   | { type: "metrics"; metrics: StreamMetrics }
   | { type: "frame"; frame: StreamFrame }
   | { type: "cam-frame"; frame: CamFrame }
+  | { type: "cam-status"; status: string }
   | { type: "booted" };
 
 const initialState: AppState = {
@@ -43,11 +46,14 @@ const initialState: AppState = {
     name: "",
     avatar: "",
     providerId: "",
-    cloudReady: true
+    cloudReady: true,
+    supabaseUrl: "",
+    anonKey: ""
   },
   camActive: false,
   camFrame: null,
   camFrames: 0,
+  camStatus: "",
   latestFrame: null,
   booting: true
 };
@@ -82,16 +88,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const disposeSnapshot = desktopApi.onSnapshot((snapshot) => dispatch({ type: "snapshot", snapshot }));
     const disposeMetrics = desktopApi.onMetrics((metrics) => dispatch({ type: "metrics", metrics }));
     const disposeFrame = desktopApi.onFrame((frame) => dispatch({ type: "frame", frame }));
-    const disposeCam = desktopApi.onCamFrame((frame) => dispatch({ type: "cam-frame", frame }));
 
     return () => {
       disposed = true;
       disposeSnapshot();
       disposeMetrics();
       disposeFrame();
-      disposeCam();
     };
   }, []);
+
+  // Camera frames arrive via supabase-js inside this webview (browser
+  // websocket passes Cloudflare; Go dials do not).
+  const { auth, pairing } = state;
+  useEffect(() => {
+    if (!auth.cloudReady || !auth.supabaseUrl || !auth.anonKey || !pairing.room || pairing.mode !== "cloud") {
+      return;
+    }
+    return subscribeCam(auth.supabaseUrl, auth.anonKey, pairing.room, (frame) => {
+      dispatch({ type: "cam-frame", frame });
+    }, (status) => {
+      dispatch({ type: "cam-status", status });
+    });
+  }, [auth.cloudReady, auth.supabaseUrl, auth.anonKey, pairing.mode, pairing.room]);
 
   const actions = useMemo(
     () => ({
@@ -155,6 +173,7 @@ function reducer(state: AppState, action: Action): AppState {
       if (roomChanged) {
         next.camFrame = null;
         next.camFrames = 0;
+        next.camStatus = "";
       }
       if (!action.snapshot.camActive && !state.camActive) {
         next.camFrame = roomChanged ? null : state.camFrame;
@@ -167,6 +186,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, latestFrame: action.frame };
     case "cam-frame":
       return { ...state, camFrame: action.frame, camFrames: state.camFrames + 1 };
+    case "cam-status":
+      return { ...state, camStatus: action.status };
     case "booted":
       return { ...state, booting: false };
     default:
