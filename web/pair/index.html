@@ -290,6 +290,37 @@
         }
       }
 
+      // --- background survival -------------------------------------------
+      // Browsers suspend cameras in background; these tricks push back as
+      // far as the OS allows and make recovery instant on return.
+      let audioCtx = null;
+      let sendRef = null;
+
+      function startKeepAlive() {
+        if (audioCtx) return;
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new Ctx();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          gain.gain.value = 0.001; // effectively silent
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+        } catch (err) { /* best effort */ }
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden || !camStream) return;
+        try { audioCtx && audioCtx.resume(); } catch (err) {}
+        if (navigator.wakeLock) {
+          navigator.wakeLock.request("screen").catch(() => {});
+        }
+        const video = document.getElementById("localVideo");
+        if (video) video.play().catch(() => {});
+        if (sendRef) setTimeout(sendRef, 250);
+      });
+
       const CAM_FPS = 7;
       const CAM_WIDTH = 640;
       const CAM_QUALITY = 0.5;
@@ -301,34 +332,57 @@
           if ("wakeLock" in navigator) {
             navigator.wakeLock.request("screen").catch(() => {});
           }
+          startKeepAlive();
 
           const channel = client.channel(`room:${code}`, { config: { broadcast: { self: false } } });
           channel.subscribe((status) => {
             if (status === "SUBSCRIBED") {
               setStatus("connected", "LIVE — streaming camera to desktop...");
-              pump();
+              startPump(channel);
             } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
               setStatus("failed", "Realtime channel failed (" + status + "). Check Supabase Realtime is enabled.");
             }
           });
-
-          function pump() {
-            const video = document.getElementById("localVideo");
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            setInterval(() => {
-              if (!video.videoWidth) return;
-              const scale = Math.min(1, CAM_WIDTH / video.videoWidth);
-              canvas.width = Math.round(video.videoWidth * scale);
-              canvas.height = Math.round(video.videoHeight * scale);
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              const jpeg = canvas.toDataURL("image/jpeg", CAM_QUALITY).split(",")[1];
-              channel.send({ type: "broadcast", event: "cam", payload: { j: jpeg, w: canvas.width, h: canvas.height } });
-            }, Math.round(1000 / CAM_FPS));
-          }
         } catch (err) {
           setStatus("failed", "Camera stream failed: " + (err && err.message ? err.message : String(err)));
         }
+      }
+
+      function startPump(channel) {
+        const video = document.getElementById("localVideo");
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        sendRef = () => {
+          if (!video.videoWidth) return;
+          const scale = Math.min(1, CAM_WIDTH / video.videoWidth);
+          canvas.width = Math.round(video.videoWidth * scale);
+          canvas.height = Math.round(video.videoHeight * scale);
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const jpeg = canvas.toDataURL("image/jpeg", CAM_QUALITY).split(",")[1];
+          channel.send({ type: "broadcast", event: "cam", payload: { j: jpeg, w: canvas.width, h: canvas.height } });
+        };
+
+        // Drive from actual video frames when supported; fall back to timer.
+        let scheduled = false;
+        const loop = () => {
+          if (scheduled) return;
+          scheduled = true;
+          video.requestVideoFrameCallback(() => {
+            scheduled = false;
+            if (document.hidden || !video.videoWidth) return;
+            try { sendRef(); } catch (err) {}
+            loop();
+          });
+        };
+        if (video.requestVideoFrameCallback) {
+          video.play().then(loop).catch(() => {});
+        }
+        setInterval(() => {
+          if (!document.hidden && !video.requestVideoFrameCallback) {
+            try { sendRef(); } catch (err) {}
+          }
+        }, Math.round(1000 / CAM_FPS));
       }
 
       function showLocalPreview() {

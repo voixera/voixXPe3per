@@ -1,5 +1,5 @@
 import { MonitorUp, RotateCw } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { H264Renderer } from "../services/h264Renderer";
 import { useAppState } from "../store/appStore";
 import type { StreamFrame, StreamMetrics, TrustedDevice } from "../types";
@@ -19,6 +19,22 @@ export function StreamStage({
 
   // Camera feed wins as soon as real frames arrive, regardless of platform.
   const camFrame = state.camFrame;
+
+  // Warn when the phone stops sending (screen locked / browser suspended).
+  const [stalled, setStalled] = useState(false);
+  const lastFrameAt = useRef(0);
+  useEffect(() => {
+    if (camFrame) {
+      lastFrameAt.current = Date.now();
+      setStalled(false);
+    }
+  }, [camFrame]);
+  useEffect(() => {
+    const t = setInterval(() => {
+      setStalled(!!state.camActive && lastFrameAt.current > 0 && Date.now() - lastFrameAt.current > 4000);
+    }, 1500);
+    return () => clearInterval(t);
+  }, [state.camActive]);
 
   useEffect(() => {
     if (camFrame || !device.streamCapable) {
@@ -101,6 +117,11 @@ export function StreamStage({
         {camFrame && (
           <span className="absolute left-4 top-4 z-10 flex items-center gap-2 border border-line-hi bg-ink-950/85 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-acid">
             <span className="led on" /> Live / Phone Cam
+          </span>
+        )}
+        {stalled && (
+          <span className="absolute left-4 bottom-4 z-10 flex items-center gap-2 border border-amber/60 bg-ink-950/90 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber">
+            <span className="led off" /> Signal stalled — unlock phone / reopen page
           </span>
         )}
       </div>
