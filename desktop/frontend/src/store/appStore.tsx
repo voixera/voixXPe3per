@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from "react";
 import { desktopApi } from "../services/desktopApi";
-import type { AuthIdentity, DesktopSnapshot, StreamFrame, StreamMetrics } from "../types";
+import type { AuthIdentity, CamFrame, DesktopSnapshot, StreamFrame, StreamMetrics } from "../types";
 
 type AppState = DesktopSnapshot & {
   latestFrame: StreamFrame | null;
+  camFrame: CamFrame | null;
+  camFrames: number;
   booting: boolean;
 };
 
@@ -11,6 +13,7 @@ type Action =
   | { type: "snapshot"; snapshot: DesktopSnapshot }
   | { type: "metrics"; metrics: StreamMetrics }
   | { type: "frame"; frame: StreamFrame }
+  | { type: "cam-frame"; frame: CamFrame }
   | { type: "booted" };
 
 const initialState: AppState = {
@@ -42,6 +45,9 @@ const initialState: AppState = {
     providerId: "",
     cloudReady: true
   },
+  camActive: false,
+  camFrame: null,
+  camFrames: 0,
   latestFrame: null,
   booting: true
 };
@@ -76,12 +82,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const disposeSnapshot = desktopApi.onSnapshot((snapshot) => dispatch({ type: "snapshot", snapshot }));
     const disposeMetrics = desktopApi.onMetrics((metrics) => dispatch({ type: "metrics", metrics }));
     const disposeFrame = desktopApi.onFrame((frame) => dispatch({ type: "frame", frame }));
+    const disposeCam = desktopApi.onCamFrame((frame) => dispatch({ type: "cam-frame", frame }));
 
     return () => {
       disposed = true;
       disposeSnapshot();
       disposeMetrics();
       disposeFrame();
+      disposeCam();
     };
   }, []);
 
@@ -103,7 +111,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             pairing,
             devices: state.devices,
             metrics: state.metrics,
-            auth: state.auth
+            auth: state.auth,
+            camActive: state.camActive
           }
         });
       },
@@ -135,12 +144,29 @@ export function useAppState() {
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case "snapshot":
-      return { ...state, ...action.snapshot, auth: action.snapshot.auth ?? state.auth, booting: false };
+    case "snapshot": {
+      const roomChanged = action.snapshot.pairing.room !== state.pairing.room;
+      const next: AppState = {
+        ...state,
+        ...action.snapshot,
+        auth: action.snapshot.auth ?? state.auth,
+        booting: false
+      };
+      if (roomChanged) {
+        next.camFrame = null;
+        next.camFrames = 0;
+      }
+      if (!action.snapshot.camActive && !state.camActive) {
+        next.camFrame = roomChanged ? null : state.camFrame;
+      }
+      return next;
+    }
     case "metrics":
       return { ...state, metrics: action.metrics };
     case "frame":
       return { ...state, latestFrame: action.frame };
+    case "cam-frame":
+      return { ...state, camFrame: action.frame, camFrames: state.camFrames + 1 };
     case "booted":
       return { ...state, booting: false };
     default:

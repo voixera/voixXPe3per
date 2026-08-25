@@ -65,6 +65,7 @@ export interface DesktopSnapshot {
   devices: TrustedDevice[];
   metrics: StreamMetrics;
   auth: AuthIdentity;
+  camActive: boolean;
 }
 
 export interface WailsDesktopApi {

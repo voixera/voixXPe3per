@@ -44,7 +44,8 @@ const emptySnapshot: DesktopSnapshot = {
     avatar: "",
     providerId: "",
     cloudReady: true
-  }
+  },
+  camActive: false
 };
 
 export const desktopApi = {

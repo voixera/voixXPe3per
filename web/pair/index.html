@@ -267,6 +267,9 @@
         if (!camStream || !code) return;
         try {
           showLocalPreview();
+          if ("wakeLock" in navigator) {
+            navigator.wakeLock.request("screen").catch(() => {});
+          }
 
           const channel = client.channel(`room:${code}`, { config: { broadcast: { self: false } } });
           channel.subscribe((status) => {

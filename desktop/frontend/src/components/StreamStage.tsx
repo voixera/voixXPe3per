@@ -1,6 +1,5 @@
 import { MonitorUp, RotateCw } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { desktopApi } from "../services/desktopApi";
+import { useEffect, useMemo, useRef } from "react";
 import { H264Renderer } from "../services/h264Renderer";
 import { useAppState } from "../store/appStore";
 import type { StreamFrame, StreamMetrics, TrustedDevice } from "../types";
@@ -15,29 +14,16 @@ export function StreamStage({
   metrics: StreamMetrics;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
-  const [camLive, setCamLive] = useState(false);
   const renderer = useMemo(() => new H264Renderer(), []);
-  const { actions } = useAppState();
+  const { state, actions } = useAppState();
 
-  const isWebCam = device.platform === "web";
-  const isPairingOnly = !device.streamCapable && !isWebCam;
+  // Camera feed wins as soon as real frames arrive, regardless of platform.
+  const camFrame = state.camFrame;
 
   useEffect(() => {
-    if (!isWebCam) {
+    if (camFrame || !device.streamCapable) {
       return;
     }
-    return desktopApi.onCamFrame((camFrame) => {
-      const el = imgRef.current;
-      if (!el) {
-        return;
-      }
-      el.src = `data:image/jpeg;base64,${camFrame.j}`;
-      setCamLive(true);
-    });
-  }, [isWebCam]);
-
-  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
@@ -51,19 +37,19 @@ export function StreamStage({
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
-  }, [renderer]);
+  }, [renderer, camFrame, device.streamCapable]);
 
   useEffect(() => {
-    if (frame) {
+    if (!camFrame && frame) {
       renderer.push(frame);
     }
-  }, [frame, renderer]);
+  }, [frame, camFrame, renderer]);
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-line-mid bg-ink-900 px-5 py-2.5">
         <p className="label-tech">03 / Feed — {device.name}</p>
-        {!isPairingOnly && (
+        {!camFrame && device.streamCapable && (
           <div className="flex gap-2">
             <button className="btn-hard h-7 px-3" type="button" onClick={() => void actions.refreshStream()}>
               <RotateCw size={13} />
@@ -78,61 +64,60 @@ export function StreamStage({
       </div>
 
       <div className="relative min-h-0 flex-1 bg-ink-950">
-        {isWebCam ? (
-          <>
-            <img
-              ref={imgRef}
-              alt=""
-              className="absolute inset-0 h-full w-full object-contain"
-              style={{ display: camLive ? "block" : "none" }}
-            />
-            {!camLive && (
-              <div className="absolute inset-0 z-10 grid place-items-center text-center">
-                <div>
-                  <div className="mx-auto mb-5 h-10 w-10 animate-spin border border-line-mid border-t-acid" />
-                  <p className="label-tech">Awaiting phone camera feed<span className="cursor-blink" /></p>
-                  <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.18em] text-dim/70">
-                    Approve pairing on the phone to start the live feed
-                  </p>
-                </div>
-              </div>
-            )}
-            {camLive && (
-              <span className="absolute left-4 top-4 z-10 flex items-center gap-2 border border-line-hi bg-ink-950/85 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-acid">
-                <span className="led on" /> Live / Phone Cam
-              </span>
-            )}
-          </>
-        ) : isPairingOnly ? (
-          <div className="absolute inset-0 z-10 grid place-items-center text-center">
-            <div className="panel max-w-md px-8 py-8">
-              <p className="label-tech text-acid">Link Established</p>
-              <h3 className="mt-4 font-display text-xl font-semibold uppercase tracking-[0.12em] text-bone">
-                Browser cannot push H264
-              </h3>
-              <p className="mt-3 font-mono text-xs leading-relaxed text-dim">
-                Mobile browsers are pairing-only. Full screen capture needs the Android app (MediaProjection) or the
-                iOS client (ReplayKit).
-              </p>
-            </div>
-          </div>
-        ) : !frame ? (
+        <img
+          ref={(el) => {
+            if (el && camFrame) {
+              el.src = `data:image/jpeg;base64,${camFrame.j}`;
+            }
+          }}
+          alt=""
+          className="absolute inset-0 h-full w-full object-contain"
+          style={{ display: camFrame ? "block" : "none" }}
+        />
+
+        {!camFrame && (
           <div className="absolute inset-0 z-10 grid place-items-center text-center">
             <div>
               <div className="mx-auto mb-5 h-10 w-10 animate-spin border border-line-mid border-t-acid" />
-              <p className="label-tech">Awaiting H264 frames<span className="cursor-blink" /></p>
+              {state.camActive ? (
+                <>
+                  <p className="label-tech">Awaiting phone camera<span className="cursor-blink" /></p>
+                  <p className="mt-3 max-w-xs font-mono text-[10px] leading-relaxed uppercase tracking-[0.16em] text-dim/70">
+                    Keep the pairing page open on the phone with the screen on
+                  </p>
+                </>
+              ) : !device.streamCapable ? (
+                <p className="label-tech">Link established — no stream from this device</p>
+              ) : (
+                <p className="label-tech">Awaiting H264 frames<span className="cursor-blink" /></p>
+              )}
             </div>
           </div>
-        ) : null}
-        <canvas ref={canvasRef} className="h-full w-full" />
+        )}
+
+        {camFrame && (
+          <span className="absolute left-4 top-4 z-10 flex items-center gap-2 border border-line-hi bg-ink-950/85 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-acid">
+            <span className="led on" /> Live / Phone Cam
+          </span>
+        )}
       </div>
 
       <footer className="flex h-9 items-center justify-between border-t border-line-mid bg-ink-900 px-5 font-mono text-[11px] uppercase tracking-[0.18em] text-dim">
-        <span>FPS <b className="text-acid">{metrics.fps}</b></span>
-        <span>{metrics.codec || "H264"}</span>
-        <span>{metrics.resolution || "Auto"}</span>
-        <span>{metrics.latencyMs}ms</span>
-        <span>FRM <b className="text-acid">{metrics.frames}</b></span>
+        {camFrame ? (
+          <>
+            <span>CAM <b className="text-acid">{camFrame.w}x{camFrame.h}</b></span>
+            <span>JPEG / Supabase RT</span>
+            <span>FRM <b className="text-acid">{state.camFrames}</b></span>
+          </>
+        ) : (
+          <>
+            <span>FPS <b className="text-acid">{metrics.fps}</b></span>
+            <span>{metrics.codec || "H264"}</span>
+            <span>{metrics.resolution || "Auto"}</span>
+            <span>{metrics.latencyMs}ms</span>
+            <span>FRM <b className="text-acid">{metrics.frames}</b></span>
+          </>
+        )}
         <span className="text-alarm">REC</span>
       </footer>
     </div>

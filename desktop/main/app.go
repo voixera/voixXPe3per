@@ -33,13 +33,15 @@ type App struct {
 
 	camMu      sync.Mutex
 	camCancel  context.CancelFunc
+	camActive  bool
 }
 
 type Snapshot struct {
-	Pairing pairing.SessionSnapshot `json:"pairing"`
-	Devices []pairing.DeviceView    `json:"devices"`
-	Metrics streaming.Metrics       `json:"metrics"`
-	Auth    cloud.Identity          `json:"auth"`
+	Pairing   pairing.SessionSnapshot `json:"pairing"`
+	Devices   []pairing.DeviceView    `json:"devices"`
+	Metrics   streaming.Metrics       `json:"metrics"`
+	Auth      cloud.Identity          `json:"auth"`
+	CamActive bool                    `json:"camActive"`
 }
 
 func NewApp() *App {
@@ -268,16 +270,24 @@ func (a *App) startCamFeed(code string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	a.camMu.Lock()
 	a.camCancel = cancel
+	a.camActive = true
 	a.camMu.Unlock()
 
 	frames := 0
+	loggedErr := false
 	a.cloud.StreamCam(ctx, code, func(frame cloud.CamFrame) {
 		frames++
 		if frames == 1 {
 			runtime.LogInfo(a.ctx, "camera feed connected, receiving frames")
+			a.emitSnapshot()
 		}
 		if a.ctx != nil {
 			runtime.EventsEmit(a.ctx, "cam.frame", frame)
+		}
+	}, func(err error) {
+		if !loggedErr && a.ctx != nil {
+			loggedErr = true
+			runtime.LogErrorf(a.ctx, "camera realtime stream failed: %v", err)
 		}
 	})
 }
@@ -289,6 +299,7 @@ func (a *App) stopCam() {
 		a.camCancel()
 		a.camCancel = nil
 	}
+	a.camActive = false
 }
 
 func (a *App) snapshot() Snapshot {
@@ -298,10 +309,11 @@ func (a *App) snapshot() Snapshot {
 		auth.CloudReady = true
 	}
 	return Snapshot{
-		Pairing: a.pairing.Snapshot(),
-		Devices: a.pairing.Devices(),
-		Metrics: a.server.Metrics(),
-		Auth:    auth,
+		Pairing:   a.pairing.Snapshot(),
+		Devices:   a.pairing.Devices(),
+		Metrics:   a.server.Metrics(),
+		Auth:      auth,
+		CamActive: a.camActive,
 	}
 }
 

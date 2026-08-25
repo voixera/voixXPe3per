@@ -21,18 +21,24 @@ type CamFrame struct {
 
 // StreamCam subscribes to the pairing room's realtime channel and forwards
 // camera frames until ctx is cancelled. Auto-reconnects with capped backoff.
-func (c *Client) StreamCam(ctx context.Context, code string, onFrame func(CamFrame)) {
+// onError receives the first failure only.
+func (c *Client) StreamCam(ctx context.Context, code string, onFrame func(CamFrame), onError func(error)) {
 	go func() {
 		attempt := 0
 		for {
 			if ctx.Err() != nil {
 				return
 			}
-			c.camSession(ctx, code, onFrame)
+			err := c.camSession(ctx, code, onFrame)
 			if ctx.Err() != nil {
 				return
 			}
-			attempt++
+			if err != nil {
+				attempt++
+				if attempt == 1 && onError != nil {
+					onError(err)
+				}
+			}
 			delay := time.Duration(attempt) * time.Second
 			if delay > 10*time.Second {
 				delay = 10 * time.Second
