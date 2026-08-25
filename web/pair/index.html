@@ -259,7 +259,9 @@
         }
       }
 
-      const CAM_FPS = 8;
+      const CAM_FPS = 7;
+      const CAM_WIDTH = 640;
+      const CAM_QUALITY = 0.5;
 
       async function startCameraBroadcast(code) {
         if (!camStream || !code) return;
@@ -267,26 +269,31 @@
           showLocalPreview();
 
           const channel = client.channel(`room:${code}`, { config: { broadcast: { self: false } } });
-          channel.on("broadcast", { event: "cam-ack" }, () => {});
           channel.subscribe((status) => {
-            if (status !== "SUBSCRIBED") return;
-            setStatus("connected", "LIVE — streaming camera to desktop...");
+            if (status === "SUBSCRIBED") {
+              setStatus("connected", "LIVE — streaming camera to desktop...");
+              pump();
+            } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+              setStatus("failed", "Realtime channel failed (" + status + "). Check Supabase Realtime is enabled.");
+            }
+          });
 
+          function pump() {
             const video = document.getElementById("localVideo");
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
             setInterval(() => {
               if (!video.videoWidth) return;
-              const scale = Math.min(1, 720 / video.videoWidth);
+              const scale = Math.min(1, CAM_WIDTH / video.videoWidth);
               canvas.width = Math.round(video.videoWidth * scale);
               canvas.height = Math.round(video.videoHeight * scale);
               ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              const jpeg = canvas.toDataURL("image/jpeg", 0.55).split(",")[1];
+              const jpeg = canvas.toDataURL("image/jpeg", CAM_QUALITY).split(",")[1];
               channel.send({ type: "broadcast", event: "cam", payload: { j: jpeg, w: canvas.width, h: canvas.height } });
             }, Math.round(1000 / CAM_FPS));
-          });
+          }
         } catch (err) {
-          setStatus("failed", "Camera stream failed: " + err.message);
+          setStatus("failed", "Camera stream failed: " + (err && err.message ? err.message : String(err)));
         }
       }
 
@@ -296,7 +303,6 @@
         video.srcObject = camStream;
         video.play().catch(() => {});
         wrap.style.display = "";
-        document.querySelector(".steps").style.display = "none";
       }
 
       function deviceIdentity() {

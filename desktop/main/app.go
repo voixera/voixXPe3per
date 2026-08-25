@@ -270,7 +270,12 @@ func (a *App) startCamFeed(code string) {
 	a.camCancel = cancel
 	a.camMu.Unlock()
 
+	frames := 0
 	a.cloud.StreamCam(ctx, code, func(frame cloud.CamFrame) {
+		frames++
+		if frames == 1 {
+			runtime.LogInfo(a.ctx, "camera feed connected, receiving frames")
+		}
 		if a.ctx != nil {
 			runtime.EventsEmit(a.ctx, "cam.frame", frame)
 		}
