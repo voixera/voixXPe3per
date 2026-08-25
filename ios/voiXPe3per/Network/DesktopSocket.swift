@@ -15,7 +15,7 @@ final class DesktopSocket {
             task = webSocket
             webSocket.resume()
 
-            if payload.mode == "relay" {
+            if payload.mode == "relay" || payload.mode == "cloud" {
                 sendJSON(["type": "relay.join", "role": "ios", "room": payload.room], using: webSocket)
             }
             sendJSON(pairMessage(payload: payload, identity: identity), using: webSocket)
@@ -36,7 +36,7 @@ final class DesktopSocket {
             task = webSocket
             webSocket.resume()
 
-            if trusted.mode == "relay" {
+            if trusted.mode == "relay" || trusted.mode == "cloud" {
                 sendJSON(["type": "relay.join", "role": "ios", "room": trusted.room], using: webSocket)
             }
             sendJSON([

@@ -1,6 +1,6 @@
-import { MonitorUp, RotateCw } from "lucide-react";
+import { Activity, MonitorUp, RotateCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { H264Renderer } from "../services/h264Renderer";
+import { H264Renderer, type RendererStats } from "../services/h264Renderer";
 import { useAppState } from "../store/appStore";
 import type { StreamFrame, StreamMetrics, TrustedDevice } from "../types";
 
@@ -16,7 +16,7 @@ function PaneBadge({ text, warn }: { text: string; warn?: boolean }) {
   );
 }
 
-function Spinner({ line1, line2 }: { line1: string; line2?: string }) {
+function Spinner({ line1, line2, hint }: { line1: string; line2?: string; hint?: string }) {
   return (
     <div className="absolute inset-0 z-10 grid place-items-center text-center">
       <div>
@@ -30,49 +30,70 @@ function Spinner({ line1, line2 }: { line1: string; line2?: string }) {
             {line2}
           </p>
         )}
+        {hint && (
+          <p className="mx-auto mt-1 max-w-xs font-mono text-[10px] uppercase leading-relaxed tracking-[0.16em] text-dim/50">
+            {hint}
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
+const STREAM_STATE_LABEL: Record<string, string> = {
+  idle: "IDLE",
+  connected: "CONNECTED",
+  starting: "STARTING",
+  streaming: "STREAMING"
+};
+
 export function StreamStage({
   device,
   frame,
-  metrics
+  metrics,
+  streamState
 }: {
   device: TrustedDevice;
   frame: StreamFrame | null;
   metrics: StreamMetrics;
+  streamState: { state: string; activeDevice: string; lastFrameAgeMs: number };
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
   const renderer = useMemo(() => new H264Renderer(), []);
   const { state, actions } = useAppState();
 
   const camFrame = state.camFrame;
   const camExpected = state.camActive || !!camFrame;
   const showBoth = !!frame && !!camFrame;
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [stats, setStats] = useState<RendererStats>(renderer.stats);
 
-  // Warn when the phone stops sending (screen locked / browser suspended).
+  useEffect(() => {
+    renderer.onStats = setStats;
+    return () => {
+      renderer.onStats = null;
+    };
+  }, [renderer]);
+
+  // Camera stall watchdog (phone locked / browser suspended).
   const [stalled, setStalled] = useState(false);
-  const lastFrameAt = useRef(0);
+  const lastCamAt = useRef(0);
   useEffect(() => {
     if (camFrame) {
-      lastFrameAt.current = Date.now();
+      lastCamAt.current = Date.now();
       setStalled(false);
     }
   }, [camFrame]);
   useEffect(() => {
     const t = setInterval(() => {
-      setStalled(camExpected && lastFrameAt.current > 0 && Date.now() - lastFrameAt.current > 4000);
+      setStalled(camExpected && lastCamAt.current > 0 && Date.now() - lastCamAt.current > 4000);
     }, 1500);
     return () => clearInterval(t);
   }, [camExpected]);
 
+  // The screen pane owns its canvas unconditionally — camera activity must
+  // never leave it detached (that froze rendering when cam started first).
   useEffect(() => {
-    if (camFrame) {
-      return;
-    }
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
@@ -86,7 +107,7 @@ export function StreamStage({
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
-  }, [renderer, camFrame]);
+  }, [renderer]);
 
   useEffect(() => {
     if (frame) {
@@ -94,35 +115,87 @@ export function StreamStage({
     }
   }, [frame, renderer]);
 
+  const streaming = streamState.state === "streaming";
+  const screenStatus =
+    streamState.state === "streaming"
+      ? "STREAMING"
+      : streamState.state === "starting"
+        ? "STARTING — waiting for first frame"
+        : device.status === "connected"
+          ? "CONNECTED — waiting for screen stream"
+          : "DEVICE OFFLINE";
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-line-mid bg-ink-900 px-5 py-2.5">
         <p className="label-tech">03 / Feed — {device.name}</p>
-        {device.streamCapable && (
-          <div className="flex gap-2">
-            <button className="btn-hard h-7 px-3" type="button" onClick={() => void actions.refreshStream()}>
-              <RotateCw size={13} />
-              Keyframe
-            </button>
-            <button className="btn-hard h-7 px-3" type="button" onClick={() => void actions.toggleFullscreen()}>
-              <MonitorUp size={13} />
-              Fullscreen
-            </button>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <button
+            className={`btn-hard h-7 px-3 ${debugOpen ? "border-acid text-acid" : ""}`}
+            type="button"
+            onClick={() => setDebugOpen((open) => !open)}
+          >
+            <Activity size={13} />
+            Debug
+          </button>
+          {device.streamCapable && (
+            <>
+              <button className="btn-hard h-7 px-3" type="button" onClick={() => void actions.refreshStream()}>
+                <RotateCw size={13} />
+                Keyframe
+              </button>
+              <button className="btn-hard h-7 px-3" type="button" onClick={() => void actions.toggleFullscreen()}>
+                <MonitorUp size={13} />
+                Fullscreen
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className={`relative min-h-0 flex-1 ${showBoth ? "grid grid-cols-2 divide-x divide-line-mid" : ""}`}>
-        {/* Screen recording pane (Android app / H264) */}
+        {/* Screen recording pane (Android APK / iOS broadcast / H264) */}
         <section className="relative bg-ink-950">
-          <canvas ref={canvasRef} className="h-full w-full" style={{ display: frame ? "block" : "block" }} />
+          <canvas ref={canvasRef} className="h-full w-full" />
           {!frame && (
             <Spinner
-              line1={device.streamCapable ? "Awaiting screen frames" : "No screen stream from this device"}
-              line2={device.streamCapable ? "Start capture in the Android app" : undefined}
+              line1={
+                device.status !== "connected"
+                  ? "No trusted device online"
+                  : streamState.state === "streaming"
+                    ? "Receiving frames…"
+                    : "Connected — awaiting screen frames"
+              }
+              line2={
+                device.platform === "ios"
+                  ? "iOS: start Screen Broadcast in Control Center"
+                  : "Start capture in the phone app"
+              }
+              hint={`state: ${screenStatus}`}
             />
           )}
-          {frame && <PaneBadge text="Screen" />}
+          {frame && <PaneBadge text="Screen" warn={!streaming} />}
+          {debugOpen && (
+            <div className="absolute bottom-4 left-4 z-10 border border-line-hi bg-ink-950/95 px-3 py-2 font-mono text-[10px] leading-relaxed tracking-[0.14em] text-dim">
+              <p className="text-bone">SCREEN DEBUG</p>
+              <p>
+                STATE: <b className={streaming ? "text-acid" : "text-amber"}>{STREAM_STATE_LABEL[streamState.state] ?? streamState.state.toUpperCase()}</b>
+              </p>
+              <p>DEV: {device.name} ({device.platform})</p>
+              <p>
+                FPS <b className="text-acid">{metrics.fps}</b> · FRAMES <b className="text-acid">{metrics.frames}</b> · LAT {metrics.latencyMs}ms
+              </p>
+              <p>
+                RES {stats.width > 0 ? `${stats.width}x${stats.height}` : metrics.resolution || "?"} · FMT {metrics.codec || "H264"}
+              </p>
+              <p>
+                LAST FRAME {stats.lastFrameAt > 0 ? `${Date.now() - stats.lastFrameAt}ms ago` : "never"} · AGE {streamState.lastFrameAgeMs}ms
+              </p>
+              <p>
+                DECODED <b className="text-acid">{stats.decoded}</b> · ERR {stats.decodeErrors} · DROP {stats.dropped}
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Camera pane (phone browser / JPEG over Supabase) */}
@@ -139,12 +212,8 @@ export function StreamStage({
               style={{ display: camFrame ? "block" : "none" }}
             />
             {!camFrame && (
-              <Spinner
-                line1="Awaiting phone camera"
-                line2={state.camFrames > 0 ? undefined : "Keep the pairing page open on the phone"}
-              />
+              <Spinner line1="Awaiting phone camera" line2={state.camFrames > 0 ? undefined : "Keep the pairing page open on the phone"} />
             )}
-            {state.camFrames > 0 && !camFrame && null}
             {!camFrame && state.camStatus && (
               <p className={`mt-2 font-mono text-[10px] ${state.camStatus === "SUBSCRIBED" ? "text-dim/70" : "text-amber"}`}>
                 RT: {state.camStatus} · FRM {state.camFrames}
@@ -170,11 +239,14 @@ export function StreamStage({
           </>
         ) : (
           <>
-            <span>{metrics.resolution || "Auto"}</span>
+            <span>{stats.width > 0 ? `${stats.width}x${stats.height}` : metrics.resolution || "Auto"}</span>
             <span>{metrics.latencyMs}ms</span>
           </>
         )}
-        <span className="text-alarm">REC</span>
+        <span className={`flex items-center gap-1.5 ${streaming ? "text-alarm" : "text-dim"}`}>
+          <span className={`led ${streaming ? "on" : "off"}`} style={{ background: streaming ? "#ff5d45" : undefined, boxShadow: streaming ? "0 0 8px rgba(255,93,69,.7)" : undefined }} />
+          REC
+        </span>
       </footer>
     </div>
   );

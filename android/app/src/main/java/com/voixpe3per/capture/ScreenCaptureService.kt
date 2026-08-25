@@ -12,6 +12,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.WindowManager
 import androidx.core.app.ServiceCompat
 import com.voixpe3per.encoder.H264Encoder
@@ -49,15 +50,27 @@ class ScreenCaptureService : Service() {
     }
 
     private fun connectAndStart(resultCode: Int, resultData: Intent) {
-        val trusted = TrustedDeviceStore(this).load() ?: return
+        val trusted = TrustedDeviceStore(this).load()
+        if (trusted == null) {
+            // Never fail silently — surface the real reason on the notification.
+            updateNotification("Tidak ada desktop terpairing — scan QR dulu")
+            stopSelf()
+            return
+        }
+        updateNotification("Menghubungkan ke desktop…")
         DesktopSocket().reconnect(
             trusted = trusted,
             onConnected = { socket ->
                 SocketRegistry.attach(socket)
                 startCapture(resultCode, resultData, FrameSender(socket))
             },
-            onError = {
+            onError = { message ->
+                Log.w(TAG, "reconnect failed: $message")
                 SocketRegistry.current()?.let { startCapture(resultCode, resultData, FrameSender(it)) }
+                    ?: run {
+                        updateNotification("Koneksi gagal - $message")
+                        stopSelf()
+                    }
             }
         )
     }
@@ -102,6 +115,7 @@ class ScreenCaptureService : Service() {
 
         sender.sendStreamStart(width, height, fps)
         h264Encoder.requestKeyFrame()
+        updateNotification("Streaming layar aktif ${width}x${height}@${fps}")
     }
 
     private fun registerProjectionCallback(mediaProjection: MediaProjection) {
@@ -161,9 +175,17 @@ class ScreenCaptureService : Service() {
             val channel = NotificationChannel(channelId, "voiXPe3per Capture", NotificationManager.IMPORTANCE_LOW)
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
+        return buildNotification("Screen mirroring aktif lewat WSS publik")
+    }
+
+    private fun updateNotification(text: String) {
+        getSystemService(NotificationManager::class.java).notify(42, buildNotification(text))
+    }
+
+    private fun buildNotification(text: String): Notification {
         return Notification.Builder(this, channelId)
             .setContentTitle("voiXPe3per streaming")
-            .setContentText("Screen mirroring aktif lewat WSS publik")
+            .setContentText(text)
             .setSmallIcon(android.R.drawable.presence_video_online)
             .build()
     }
@@ -178,6 +200,7 @@ class ScreenCaptureService : Service() {
     }
 
     companion object {
+        private const val TAG = "voiXPe3per"
         const val EXTRA_RESULT_CODE = "result_code"
         const val EXTRA_RESULT_DATA = "result_data"
     }

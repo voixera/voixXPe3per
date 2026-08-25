@@ -48,6 +48,12 @@ export interface StreamMetrics {
   resolution: string;
 }
 
+export interface StreamState {
+  state: "idle" | "connected" | "starting" | "streaming" | string;
+  activeDevice: string;
+  lastFrameAgeMs: number;
+}
+
 export interface StreamFrame {
   codec: string;
   data: string;
@@ -66,6 +72,7 @@ export interface DesktopSnapshot {
   pairing: PairingSession;
   devices: TrustedDevice[];
   metrics: StreamMetrics;
+  stream: StreamState;
   auth: AuthIdentity;
   camActive: boolean;
 }

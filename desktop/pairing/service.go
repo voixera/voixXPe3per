@@ -79,9 +79,17 @@ func (s *Service) StartCloudSessionWithRoom(code string) error {
 }
 
 func (s *Service) startCloudSessionWithCode(code string) error {
+	// Carry the relay URL in the cloud QR too, so the Android APK can pair
+	// over relay while browser phones use the Supabase paths.
+	relayURL := strings.TrimSpace(os.Getenv("VOIXPE3PER_RELAY_URL"))
+	if relayURL == "" {
+		relayURL = defaultRelayURL
+	}
+
 	payload := PairingPayload{
-		Mode: ModeCloud,
-		Code: code,
+		Mode:  ModeCloud,
+		Code:  code,
+		Relay: relayURL,
 	}
 	qrTarget := pairingURL(payload)
 	png, err := qrcode.Encode(qrTarget, qrcode.Medium, 384)
@@ -94,6 +102,7 @@ func (s *Service) startCloudSessionWithCode(code string) error {
 	s.session = SessionSnapshot{
 		Mode:      ModeCloud,
 		Room:      code,
+		RelayURL:  relayURL,
 		QRDataURL: "data:image/png;base64," + base64.StdEncoding.EncodeToString(png),
 		Status:    "Waiting for approval...",
 	}

@@ -10,7 +10,8 @@ struct PairingPayload: Equatable {
     let room: String
 
     func webSocketURL() throws -> URL {
-        if mode == "relay" || mode == "direct" {
+        // Cloud sessions stream over the public relay, same as relay mode.
+        if mode == "relay" || mode == "direct" || mode == "cloud" {
             guard let relayURL = URL(string: relay.isEmpty ? publicURL : relay) else {
                 throw PairingError.invalidWebSocketURL
             }
@@ -45,7 +46,7 @@ struct PairingPayload: Equatable {
             token: json.string("token") ?? "",
             relay: json.string("relay") ?? "",
             publicURL: json.string("public") ?? "",
-            room: json.string("room") ?? ""
+            room: json.string("room") ?? json.string("code") ?? ""
         )
     }
 
@@ -61,7 +62,8 @@ struct PairingPayload: Equatable {
             token: components.queryValue("token") ?? "",
             relay: components.queryValue("relay") ?? "",
             publicURL: components.queryValue("public") ?? "",
-            room: components.queryValue("room") ?? ""
+            // Cloud QRs carry the room as ?code= (desktop pairing.go).
+            room: components.queryValue("room") ?? components.queryValue("code") ?? ""
         )
     }
 }

@@ -29,7 +29,7 @@ data class PairingPayload(
                 token = json.optString("token", ""),
                 relay = json.optString("relay", ""),
                 publicUrl = json.optString("public", ""),
-                room = json.optString("room", "")
+                room = json.optString("room", json.optString("code", ""))
             )
         }
 
@@ -42,7 +42,10 @@ data class PairingPayload(
                 token = uri.getQueryParameter("token") ?: "",
                 relay = uri.getQueryParameter("relay") ?: "",
                 publicUrl = uri.getQueryParameter("public") ?: "",
-                room = uri.getQueryParameter("room") ?: ""
+                // Cloud QRs carry the room as ?code= (desktop pairing.go).
+                room = uri.getQueryParameter("room")
+                    ?: uri.getQueryParameter("code")
+                    ?: ""
             )
         }
     }

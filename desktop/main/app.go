@@ -43,6 +43,7 @@ type Snapshot struct {
 	Pairing   pairing.SessionSnapshot `json:"pairing"`
 	Devices   []pairing.DeviceView    `json:"devices"`
 	Metrics   streaming.Metrics       `json:"metrics"`
+	Stream    streaming.StreamState   `json:"stream"`
 	Auth      cloud.Identity          `json:"auth"`
 	CamActive bool                    `json:"camActive"`
 }
@@ -64,10 +65,16 @@ func NewApp() *App {
 
 	server.Events = streaming.Events{
 		OnDeviceConnected: func(device pairing.DeviceView) {
+			if app.ctx != nil {
+				runtime.LogInfof(app.ctx, "[CONNECT] device=%s platform=%s", device.ID, device.Platform)
+			}
 			app.emitSnapshot()
 		},
 		OnDeviceDisconnected: func(deviceID string) {
 			app.pairing.MarkDeviceOffline(deviceID)
+			if app.ctx != nil {
+				runtime.LogInfof(app.ctx, "[DISCONNECT] device=%s", deviceID)
+			}
 			app.emitSnapshot()
 		},
 		OnFrame: func(frame streaming.FrameEvent) {
@@ -166,6 +173,9 @@ func (a *App) StartFreshPairing() (pairing.SessionSnapshot, error) {
 	if err := a.cloud.CreatePairingSession(context.Background(), code, a.hostLabel()); err != nil {
 		runtime.LogErrorf(a.ctx, "supabase session insert failed: %v", err)
 	}
+	// The relay room follows the session room — rejoin or phones dialing the
+	// new QR land in a room the desktop left (permanent "Awaiting frames").
+	a.startRelayIfConfigured(a.ctx)
 	a.watchCloudApprovals()
 	a.emitSnapshot()
 	return a.pairing.Snapshot(), nil
@@ -413,6 +423,7 @@ func (a *App) snapshot() Snapshot {
 		Pairing:   a.pairing.Snapshot(),
 		Devices:   a.pairing.Devices(),
 		Metrics:   a.server.Metrics(),
+		Stream:    a.server.State(),
 		Auth:      auth,
 		CamActive: a.camActive,
 	}
@@ -426,14 +437,9 @@ func (a *App) emitSnapshot() {
 
 func (a *App) startRelayIfConfigured(ctx context.Context) {
 	snapshot := a.pairing.Snapshot()
-	if snapshot.Mode == pairing.ModeCloud {
-		if a.relay != nil {
-			a.relay.Shutdown()
-			a.relay = nil
-		}
-		return
-	}
-	if snapshot.Mode != pairing.ModeRelay || snapshot.RelayURL == "" || snapshot.Room == "" {
+	// Cloud mode ALSO joins the relay room so Android APKs streaming H264
+	// over the relay can reach the desktop while browser phones use Supabase.
+	if snapshot.RelayURL == "" || snapshot.Room == "" {
 		if a.relay != nil {
 			a.relay.Shutdown()
 			a.relay = nil

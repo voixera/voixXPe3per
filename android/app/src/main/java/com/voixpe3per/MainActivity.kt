@@ -23,6 +23,7 @@ import com.voixpe3per.security.TrustedDeviceStore
 
 class MainActivity : AppCompatActivity() {
     private val captureRequest = 7101
+    private var reconnectAttempts = 0
     private lateinit var statusText: TextView
     private lateinit var pairingRepository: PairingRepository
     private lateinit var trustedStore: TrustedDeviceStore
@@ -63,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         }
         val reconnectButton = Button(this).apply {
             text = "Reconnect Trusted Desktop"
-            setOnClickListener { attemptReconnect() }
+            setOnClickListener { attemptReconnect(manual = true) }
         }
         statusText = TextView(this).apply {
             text = "Status: waiting"
@@ -90,21 +91,31 @@ class MainActivity : AppCompatActivity() {
             .initiateScan()
     }
 
-    private fun attemptReconnect() {
+    private fun attemptReconnect(manual: Boolean = false) {
         val trusted = trustedStore.load()
         if (trusted == null) {
             setStatus("Status: belum ada trusted desktop")
             return
         }
 
+        if (manual) {
+            reconnectAttempts = 0
+        }
         setStatus("Status: reconnecting ${trusted.url}")
         pairingRepository.reconnectTrusted(
             onReady = {
+                reconnectAttempts = 0
                 setStatus("Status: trusted desktop connected")
                 requestCapturePermission()
             },
             onError = { message ->
                 setStatus("Status: reconnect failed - $message")
+                // Desktop restarts and relay cold starts are common; retry a
+                // few times before giving up so the session self-heals.
+                if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    reconnectAttempts += 1
+                    statusText.postDelayed({ attemptReconnect() }, 4_000L)
+                }
             }
         )
     }
@@ -173,5 +184,9 @@ class MainActivity : AppCompatActivity() {
         ) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 32)
         }
+    }
+
+    companion object {
+        private const val MAX_RECONNECT_ATTEMPTS = 4
     }
 }

@@ -15,6 +15,7 @@ targets:
         INFOPLIST_FILE: voiXPe3per/Info.plist
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: voiXPe3per/App.entitlements
     info:
       path: voiXPe3per/Info.plist
       properties:
@@ -50,5 +51,6 @@ targets:
         INFOPLIST_FILE: voiXPe3perBroadcast/Info.plist
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: voiXPe3perBroadcast/Broadcast.entitlements
     info:
       path: voiXPe3perBroadcast/Info.plist

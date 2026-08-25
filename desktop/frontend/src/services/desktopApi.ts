@@ -47,6 +47,11 @@ const emptySnapshot: DesktopSnapshot = {
     supabaseUrl: "",
     anonKey: ""
   },
+  stream: {
+    state: "idle",
+    activeDevice: "demo-galaxy-a55",
+    lastFrameAgeMs: -1
+  },
   camActive: false
 };
 

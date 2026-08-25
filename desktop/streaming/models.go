@@ -12,6 +12,15 @@ type Metrics struct {
 	Resolution string    `json:"resolution"`
 }
 
+// StreamState tells the UI the truth about the video pipeline instead of a
+// generic spinner: idle → connected (device paired) → starting (stream.start
+// received) → streaming (fresh frames).
+type StreamState struct {
+	State         string `json:"state"` // idle | connected | starting | streaming
+	ActiveDevice  string `json:"activeDevice"`
+	LastFrameAgoMs int64 `json:"lastFrameAgeMs"`
+}
+
 type FrameEvent struct {
 	Codec        string `json:"codec"`
 	Data         string `json:"data"`

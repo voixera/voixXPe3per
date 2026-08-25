@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from "react";
 import { desktopApi } from "../services/desktopApi";
 import { subscribeCam } from "../services/supabaseCam";
-import type { AuthIdentity, CamFrame, DesktopSnapshot, StreamFrame, StreamMetrics } from "../types";
+import type { AuthIdentity, CamFrame, DesktopSnapshot, StreamFrame, StreamMetrics, StreamState } from "../types";
 
 type AppState = DesktopSnapshot & {
   latestFrame: StreamFrame | null;
@@ -50,6 +50,11 @@ const initialState: AppState = {
     supabaseUrl: "",
     anonKey: ""
   },
+  stream: {
+    state: "idle",
+    activeDevice: "",
+    lastFrameAgeMs: -1
+  } as StreamState,
   camActive: false,
   camFrame: null,
   camFrames: 0,
@@ -132,6 +137,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             pairing,
             devices: state.devices,
             metrics: state.metrics,
+            stream: state.stream,
             auth: state.auth,
             camActive: state.camActive
           }
@@ -145,6 +151,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             pairing,
             devices: state.devices,
             metrics: state.metrics,
+            stream: state.stream,
             auth: state.auth,
             camActive: state.camActive
           }
@@ -162,7 +169,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "snapshot", snapshot });
       }
     }),
-    [state.devices, state.metrics, state.auth]
+    [state.devices, state.metrics, state.stream, state.auth]
   );
 
   return <AppStateContext.Provider value={{ state, actions }}>{children}</AppStateContext.Provider>;

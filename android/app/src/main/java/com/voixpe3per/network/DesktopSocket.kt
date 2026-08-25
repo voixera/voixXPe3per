@@ -139,7 +139,9 @@ class DesktopSocket {
     }
 
     private fun joinRelayIfNeeded(webSocket: WebSocket, mode: String, room: String) {
-        if (mode != "relay") {
+        // Cloud sessions stream over the same public relay (desktop joins the
+        // room named after the session code), so join for relay AND cloud.
+        if (room.isBlank() || (mode != "relay" && mode != "cloud")) {
             return
         }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -38,6 +39,10 @@ type Server struct {
 	frameCounter    uint64
 	done            chan struct{}
 	requestKeyframe func()
+
+	lastFrameNS   atomic.Int64 // unix nano of most recent frame
+	streamStartNS atomic.Int64 // unix nano of last stream.start message
+	loggedFrames  uint64       // throttled FRAME log counter
 }
 
 func NewServer(addr string, pairingService *pairing.Service) *Server {
@@ -133,6 +138,33 @@ func (s *Server) Metrics() Metrics {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.metrics
+}
+
+// State reports the truthful pipeline state for the UI.
+func (s *Server) State() StreamState {
+	s.mu.RLock()
+	active := s.activeDeviceID
+	s.mu.RUnlock()
+
+	last := s.lastFrameNS.Load()
+	agoMs := int64(-1)
+	if last > 0 {
+		agoMs = time.Since(time.Unix(0, last)).Milliseconds()
+		if agoMs < 0 {
+			agoMs = 0
+		}
+	}
+
+	state := "idle"
+	switch {
+	case agoMs >= 0 && agoMs < 2000:
+		state = "streaming"
+	case s.streamStartNS.Load() > 0 && time.Since(time.Unix(0, s.streamStartNS.Load())) < 30*time.Second:
+		state = "starting"
+	case active != "":
+		state = "connected"
+	}
+	return StreamState{State: state, ActiveDevice: active, LastFrameAgoMs: agoMs}
 }
 
 func (s *Server) RequestKeyframe() {
@@ -238,6 +270,7 @@ func (s *Server) handleText(sendJSON func(any) error, payload []byte, currentDev
 		}
 		_ = sendJSON(success)
 		s.activateDevice(success.Device.ID)
+		log.Printf("[HANDSHAKE] pair.verify device=%s platform=%s name=%q", success.Device.ID, success.Device.Platform, success.Device.Name)
 		if s.Events.OnDeviceConnected != nil {
 			s.Events.OnDeviceConnected(success.Device)
 		}
@@ -256,6 +289,7 @@ func (s *Server) handleText(sendJSON func(any) error, payload []byte, currentDev
 		}
 		_ = sendJSON(map[string]any{"type": "reconnect.success", "device": device})
 		s.activateDevice(device.ID)
+		log.Printf("[HANDSHAKE] device.reconnect device=%s name=%q", device.ID, device.Name)
 		if s.Events.OnDeviceConnected != nil {
 			s.Events.OnDeviceConnected(device)
 		}
@@ -266,11 +300,13 @@ func (s *Server) handleText(sendJSON func(any) error, payload []byte, currentDev
 		if err := json.Unmarshal(payload, &message); err != nil {
 			return currentDeviceID
 		}
+		s.streamStartNS.Store(time.Now().UnixNano())
 		s.mu.Lock()
 		s.metrics.Codec = fallback(message.Codec, "H264")
 		s.metrics.Resolution = resolution(message.Width, message.Height)
 		s.metrics.UpdatedAt = time.Now().UTC()
 		s.mu.Unlock()
+		log.Printf("[STREAM_START] codec=%s %dx%d fps=%d", fallback(message.Codec, "H264"), message.Width, message.Height, message.TargetFPS)
 		return currentDeviceID
 	}
 
@@ -306,11 +342,22 @@ func (s *Server) disconnect(conn *websocket.Conn, deviceID string) {
 func (s *Server) handleFrame(payload []byte) {
 	frame, err := ParseFramePacket(payload)
 	if err != nil {
+		log.Printf("[FRAME] rejected: %v (len=%d)", err, len(payload))
 		return
 	}
 
 	receivedAt := time.Now()
+	if s.lastFrameNS.Swap(receivedAt.UnixNano()) == 0 {
+		log.Printf("[FRAME_RECEIVED] first frame key=%v bytes=%d ts=%d", frame.KeyFrame, len(frame.Payload), frame.TimestampNS)
+	}
 	frames := atomic.AddUint64(&s.frameCounter, 1)
+	if n := atomic.AddUint64(&s.loggedFrames, 1); n%600 == 0 {
+		lat := int64(0)
+		if frame.TimestampNS > 0 {
+			lat = receivedAt.Sub(time.Unix(0, frame.TimestampNS)).Milliseconds()
+		}
+		log.Printf("[FRAME] total=%d key=%v bytes=%d latency=%dms", frames, frame.KeyFrame, len(frame.Payload), lat)
+	}
 	latency := 0
 	if frame.TimestampNS > 0 {
 		latency = int(receivedAt.Sub(time.Unix(0, frame.TimestampNS)).Milliseconds())

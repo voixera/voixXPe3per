@@ -28,7 +28,7 @@ export function App() {
         />
         <section className="flex min-w-0 flex-col border-l border-line-mid bg-ink-850">
           {connectedDevice && !pairingOpen ? (
-            <StreamStage device={connectedDevice} frame={state.latestFrame} metrics={state.metrics} />
+            <StreamStage device={connectedDevice} frame={state.latestFrame} metrics={state.metrics} streamState={state.stream} />
           ) : (
             <PairingPanel
               pairing={state.pairing}
