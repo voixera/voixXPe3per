@@ -63,6 +63,7 @@ const AppStateContext = createContext<
       state: AppState;
       actions: {
         refreshPairing(): Promise<void>;
+        startFreshPairing(): Promise<void>;
         refreshStream(): Promise<void>;
         toggleFullscreen(): Promise<void>;
         forgetDevice(deviceId: string): Promise<void>;
@@ -123,6 +124,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       },
       async refreshPairing() {
         const pairing = await desktopApi.refreshPairing();
+        dispatch({
+          type: "snapshot",
+          snapshot: {
+            pairing,
+            devices: state.devices,
+            metrics: state.metrics,
+            auth: state.auth,
+            camActive: state.camActive
+          }
+        });
+      },
+      async startFreshPairing() {
+        const pairing = await desktopApi.startFreshPairing();
         dispatch({
           type: "snapshot",
           snapshot: {

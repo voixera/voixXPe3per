@@ -147,6 +147,28 @@ func (a *App) RefreshPairing() (pairing.SessionSnapshot, error) {
 	return a.pairing.Snapshot(), nil
 }
 
+// StartFreshPairing forces a brand-new room code even when a saved session
+// exists, so additional phones can join while others stay connected.
+func (a *App) StartFreshPairing() (pairing.SessionSnapshot, error) {
+	clearActiveSession()
+	a.stopWatch()
+
+	if !a.cloudReadyAndLoggedIn() {
+		return a.RefreshPairing()
+	}
+
+	code, err := a.pairing.StartCloudSession(a.hostLabel())
+	if err != nil {
+		return pairing.SessionSnapshot{}, err
+	}
+	if err := a.cloud.CreatePairingSession(context.Background(), code, a.hostLabel()); err != nil {
+		runtime.LogErrorf(a.ctx, "supabase session insert failed: %v", err)
+	}
+	a.watchCloudApprovals()
+	a.emitSnapshot()
+	return a.pairing.Snapshot(), nil
+}
+
 func (a *App) ForgetDevice(deviceID string) error {
 	if deviceID == "" {
 		return errors.New("device id is required")

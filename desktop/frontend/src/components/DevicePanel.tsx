@@ -1,15 +1,30 @@
-import { Apple, Globe2, Smartphone, Trash2 } from "lucide-react";
+import { Apple, Globe2, Plus, Smartphone, Trash2 } from "lucide-react";
 import { useAppState } from "../store/appStore";
 import type { TrustedDevice } from "../types";
 import { StatusPill } from "./StatusPill";
 
-export function DevicePanel({ devices }: { devices: TrustedDevice[] }) {
+export function DevicePanel({
+  devices,
+  onAddDevice
+}: {
+  devices: TrustedDevice[];
+  onAddDevice: () => void;
+}) {
   const { actions } = useAppState();
 
   return (
     <aside className="flex h-full flex-col bg-ink-900">
-      <div className="border-b border-line-mid px-4 py-2.5">
+      <div className="flex items-center justify-between border-b border-line-mid px-4 py-2.5">
         <p className="label-tech">02 / Devices</p>
+        <button
+          className="btn-hard h-6 gap-1 px-2 text-[10px]"
+          type="button"
+          title="Pair another phone (max 5)"
+          onClick={onAddDevice}
+        >
+          <Plus size={12} />
+          Add
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">

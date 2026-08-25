@@ -73,6 +73,7 @@ export interface DesktopSnapshot {
 export interface WailsDesktopApi {
   GetSnapshot(): Promise<DesktopSnapshot>;
   RefreshPairing(): Promise<PairingSession>;
+  StartFreshPairing(): Promise<PairingSession>;
   ForgetDevice(deviceId: string): Promise<void>;
   RefreshStream(): Promise<void>;
   ToggleFullscreen(): Promise<void> | void;

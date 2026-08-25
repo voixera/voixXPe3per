@@ -4,6 +4,37 @@ import { H264Renderer } from "../services/h264Renderer";
 import { useAppState } from "../store/appStore";
 import type { StreamFrame, StreamMetrics, TrustedDevice } from "../types";
 
+function PaneBadge({ text, warn }: { text: string; warn?: boolean }) {
+  return (
+    <span
+      className={`absolute left-4 top-4 z-10 flex items-center gap-2 border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] ${
+        warn ? "border-amber/60 bg-ink-950/90 text-amber" : "border-line-hi bg-ink-950/85 text-acid"
+      }`}
+    >
+      <span className={`led ${warn ? "off" : "on"}`} /> {text}
+    </span>
+  );
+}
+
+function Spinner({ line1, line2 }: { line1: string; line2?: string }) {
+  return (
+    <div className="absolute inset-0 z-10 grid place-items-center text-center">
+      <div>
+        <div className="mx-auto mb-5 h-10 w-10 animate-spin border border-line-mid border-t-acid" />
+        <p className="label-tech">
+          {line1}
+          <span className="cursor-blink" />
+        </p>
+        {line2 && (
+          <p className="mx-auto mt-3 max-w-xs font-mono text-[10px] uppercase leading-relaxed tracking-[0.16em] text-dim/70">
+            {line2}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function StreamStage({
   device,
   frame,
@@ -14,11 +45,13 @@ export function StreamStage({
   metrics: StreamMetrics;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const renderer = useMemo(() => new H264Renderer(), []);
   const { state, actions } = useAppState();
 
-  // Camera feed wins as soon as real frames arrive, regardless of platform.
   const camFrame = state.camFrame;
+  const camExpected = state.camActive || !!camFrame;
+  const showBoth = !!frame && !!camFrame;
 
   // Warn when the phone stops sending (screen locked / browser suspended).
   const [stalled, setStalled] = useState(false);
@@ -31,13 +64,13 @@ export function StreamStage({
   }, [camFrame]);
   useEffect(() => {
     const t = setInterval(() => {
-      setStalled(!!state.camActive && lastFrameAt.current > 0 && Date.now() - lastFrameAt.current > 4000);
+      setStalled(camExpected && lastFrameAt.current > 0 && Date.now() - lastFrameAt.current > 4000);
     }, 1500);
     return () => clearInterval(t);
-  }, [state.camActive]);
+  }, [camExpected]);
 
   useEffect(() => {
-    if (camFrame || !device.streamCapable) {
+    if (camFrame) {
       return;
     }
     const canvas = canvasRef.current;
@@ -53,19 +86,19 @@ export function StreamStage({
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
-  }, [renderer, camFrame, device.streamCapable]);
+  }, [renderer, camFrame]);
 
   useEffect(() => {
-    if (!camFrame && frame) {
+    if (frame) {
       renderer.push(frame);
     }
-  }, [frame, camFrame, renderer]);
+  }, [frame, renderer]);
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-line-mid bg-ink-900 px-5 py-2.5">
         <p className="label-tech">03 / Feed — {device.name}</p>
-        {!camFrame && device.streamCapable && (
+        {device.streamCapable && (
           <div className="flex gap-2">
             <button className="btn-hard h-7 px-3" type="button" onClick={() => void actions.refreshStream()}>
               <RotateCw size={13} />
@@ -79,67 +112,60 @@ export function StreamStage({
         )}
       </div>
 
-      <div className="relative min-h-0 flex-1 bg-ink-950">
-        <img
-          ref={(el) => {
-            if (el && camFrame) {
-              el.src = `data:image/jpeg;base64,${camFrame.j}`;
-            }
-          }}
-          alt=""
-          className="absolute inset-0 h-full w-full object-contain"
-          style={{ display: camFrame ? "block" : "none" }}
-        />
+      <div className={`relative min-h-0 flex-1 ${showBoth ? "grid grid-cols-2 divide-x divide-line-mid" : ""}`}>
+        {/* Screen recording pane (Android app / H264) */}
+        <section className="relative bg-ink-950">
+          <canvas ref={canvasRef} className="h-full w-full" style={{ display: frame ? "block" : "block" }} />
+          {!frame && (
+            <Spinner
+              line1={device.streamCapable ? "Awaiting screen frames" : "No screen stream from this device"}
+              line2={device.streamCapable ? "Start capture in the Android app" : undefined}
+            />
+          )}
+          {frame && <PaneBadge text="Screen" />}
+        </section>
 
-        {!camFrame && (
-          <div className="absolute inset-0 z-10 grid place-items-center text-center">
-            <div>
-              <div className="mx-auto mb-5 h-10 w-10 animate-spin border border-line-mid border-t-acid" />
-              {state.camActive ? (
-                <>
-                  <p className="label-tech">Awaiting phone camera<span className="cursor-blink" /></p>
-                  <p className="mt-3 max-w-xs font-mono text-[10px] leading-relaxed uppercase tracking-[0.16em] text-dim/70">
-                    Keep the pairing page open on the phone with the screen on
-                  </p>
-                  {state.camStatus && state.camStatus !== "SUBSCRIBED" && (
-                    <p className="mt-3 font-mono text-[10px] text-amber">RT: {state.camStatus}</p>
-                  )}
-                </>
-              ) : !device.streamCapable ? (
-                <p className="label-tech">Link established — no stream from this device</p>
-              ) : (
-                <p className="label-tech">Awaiting H264 frames<span className="cursor-blink" /></p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {camFrame && (
-          <span className="absolute left-4 top-4 z-10 flex items-center gap-2 border border-line-hi bg-ink-950/85 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.22em] text-acid">
-            <span className="led on" /> Live / Phone Cam
-          </span>
-        )}
-        {stalled && (
-          <span className="absolute left-4 bottom-4 z-10 flex items-center gap-2 border border-amber/60 bg-ink-950/90 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber">
-            <span className="led off" /> Signal stalled — unlock phone / reopen page
-          </span>
+        {/* Camera pane (phone browser / JPEG over Supabase) */}
+        {camExpected && (
+          <section className="relative bg-ink-950">
+            <img
+              ref={(el) => {
+                if (el && camFrame) {
+                  el.src = `data:image/jpeg;base64,${camFrame.j}`;
+                }
+              }}
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain"
+              style={{ display: camFrame ? "block" : "none" }}
+            />
+            {!camFrame && (
+              <Spinner
+                line1="Awaiting phone camera"
+                line2="Keep the pairing page open on the phone"
+              />
+            )}
+            {camFrame && <PaneBadge text="Camera" />}
+            {stalled && (
+              <span className="absolute bottom-4 left-4 z-10 flex items-center gap-2 border border-amber/60 bg-ink-950/90 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-amber">
+                <span className="led off" /> Stalled — unlock phone
+              </span>
+            )}
+          </section>
         )}
       </div>
 
       <footer className="flex h-9 items-center justify-between border-t border-line-mid bg-ink-900 px-5 font-mono text-[11px] uppercase tracking-[0.18em] text-dim">
+        <span>FPS <b className="text-acid">{metrics.fps}</b></span>
+        <span>{metrics.codec || "H264"}</span>
         {camFrame ? (
           <>
             <span>CAM <b className="text-acid">{camFrame.w}x{camFrame.h}</b></span>
-            <span>JPEG / Supabase RT</span>
             <span>FRM <b className="text-acid">{state.camFrames}</b></span>
           </>
         ) : (
           <>
-            <span>FPS <b className="text-acid">{metrics.fps}</b></span>
-            <span>{metrics.codec || "H264"}</span>
             <span>{metrics.resolution || "Auto"}</span>
             <span>{metrics.latencyMs}ms</span>
-            <span>FRM <b className="text-acid">{metrics.frames}</b></span>
           </>
         )}
         <span className="text-alarm">REC</span>

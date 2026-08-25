@@ -59,6 +59,10 @@ export const desktopApi = {
     return window.go?.mainapp?.App?.RefreshPairing?.() ?? emptySnapshot.pairing;
   },
 
+  async startFreshPairing(): Promise<PairingSession> {
+    return window.go?.mainapp?.App?.StartFreshPairing?.() ?? emptySnapshot.pairing;
+  },
+
   async forgetDevice(deviceId: string): Promise<void> {
     await window.go?.mainapp?.App?.ForgetDevice?.(deviceId);
   },

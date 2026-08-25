@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 import { useAppState } from "../store/appStore";
 import type { PairingSession } from "../types";
 import { Brackets } from "./Brackets";
@@ -9,7 +9,15 @@ const STEPS = [
   "Approve with your Discord account"
 ];
 
-export function PairingPanel({ pairing, booting }: { pairing: PairingSession; booting: boolean }) {
+export function PairingPanel({
+  pairing,
+  booting,
+  onClose
+}: {
+  pairing: PairingSession;
+  booting: boolean;
+  onClose?: () => void;
+}) {
   const { actions } = useAppState();
   const isCloud = pairing.mode === "cloud";
 
@@ -17,10 +25,18 @@ export function PairingPanel({ pairing, booting }: { pairing: PairingSession; bo
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-line-mid bg-ink-900 px-5 py-2.5">
         <p className="label-tech">01 / Pairing</p>
-        <button className="btn-hard h-7 px-3" type="button" onClick={() => void actions.refreshPairing()}>
-          <RefreshCw size={13} />
-          New Code
-        </button>
+        <div className="flex gap-2">
+          <button className="btn-hard h-7 px-3" type="button" onClick={() => void actions.startFreshPairing()}>
+            <RefreshCw size={13} />
+            New Code
+          </button>
+          {onClose && (
+            <button className="btn-hard h-7 px-3" type="button" onClick={onClose}>
+              <X size={13} />
+              Back to Feed
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid flex-1 place-items-center overflow-y-auto bg-ink-900 p-6">
