@@ -112,7 +112,13 @@
     <script src="/config.js"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
-      const roomCode = (params.get("code") || params.get("room") || "").trim();
+      // New QR code wins; otherwise reconnect to the last paired desktop.
+      let roomCode = (params.get("code") || params.get("room") || "").trim();
+      const savedRoom = localStorage.getItem("peeper.room");
+      const restoredSession = !roomCode && !!savedRoom;
+      if (restoredSession) {
+        roomCode = savedRoom;
+      }
 
       const el = {
         userName: document.getElementById("userName"),
@@ -143,6 +149,8 @@
         applySession(data.session);
         if (!roomCode) {
           setStatus("failed", "No room code in URL. Scan the QR from the desktop app again.");
+        } else if (restoredSession) {
+          setStatus(session ? "idle" : "idle", `Reconnecting to your desktop (${roomCode}). Tap approve if needed.`);
         } else {
           setStatus(session ? "idle" : "idle", session ? "Ready. Tap approve to link this device." : "Login with Discord first.");
         }
@@ -235,7 +243,30 @@
         el.allowBtn.classList.add("success");
         el.allowBtn.innerHTML =
           '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Device Linked</span>';
+        localStorage.setItem("peeper.room", roomCode);
         startCameraBroadcast(roomCode);
+        watchForRejection(roomCode);
+      }
+
+      // The desktop writes status="full" when its 5-device cap blocks us.
+      function watchForRejection(code) {
+        const started = Date.now();
+        const timer = setInterval(async () => {
+          try {
+            const { data } = await client
+              .from("pairing_sessions")
+              .select("status")
+              .eq("code", code)
+              .maybeSingle();
+            if (data && data.status === "full") {
+              clearInterval(timer);
+              setStatus("failed", "Desktop slots full (max 5). Remove a device on the desktop first.");
+            }
+          } catch (err) { /* keep polling */ }
+          if (Date.now() - started > 20000) {
+            clearInterval(timer);
+          }
+        }, 2500);
       }
 
       // Pairing requires camera + microphone authorization up front.

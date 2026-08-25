@@ -23,7 +23,13 @@ const (
 
 	defaultPairingPageURL = "https://voixxpe3per.vercel.app/pair"
 	defaultRelayURL       = "wss://voixpe3per-relay.onrender.com/ws"
+
+	// MaxDevices caps how many phones may stay paired to one desktop.
+	MaxDevices = 5
 )
+
+// ErrDeviceLimit is returned by VerifyPairing when MaxDevices is exceeded.
+var ErrDeviceLimit = fmt.Errorf("device limit reached (%d)", MaxDevices)
 
 type Service struct {
 	store Store
@@ -63,7 +69,16 @@ func (s *Service) StartCloudSession(hostName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return code, s.startCloudSessionWithCode(code)
+}
 
+// StartCloudSessionWithRoom restores a previous cloud session so an already
+// paired phone keeps streaming after a desktop restart (no re-pairing).
+func (s *Service) StartCloudSessionWithRoom(code string) error {
+	return s.startCloudSessionWithCode(code)
+}
+
+func (s *Service) startCloudSessionWithCode(code string) error {
 	payload := PairingPayload{
 		Mode: ModeCloud,
 		Code: code,
@@ -71,7 +86,7 @@ func (s *Service) StartCloudSession(hostName string) (string, error) {
 	qrTarget := pairingURL(payload)
 	png, err := qrcode.Encode(qrTarget, qrcode.Medium, 384)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	s.mu.Lock()
@@ -82,7 +97,7 @@ func (s *Service) StartCloudSession(hostName string) (string, error) {
 		QRDataURL: "data:image/png;base64," + base64.StdEncoding.EncodeToString(png),
 		Status:    "Waiting for approval...",
 	}
-	return code, nil
+	return nil
 }
 
 func (s *Service) startDirectSession(publicURL string) error {
@@ -188,6 +203,14 @@ func (s *Service) VerifyPairing(token string, handshake DeviceHandshake) (PairSu
 		deviceID = platform(handshake) + "-" + generated
 	}
 
+	s.mu.RLock()
+	_, known := s.devices[deviceID]
+	count := len(s.devices)
+	s.mu.RUnlock()
+	if !known && count >= MaxDevices {
+		return PairSuccess{}, ErrDeviceLimit
+	}
+
 	trustSecret, err := randomToken(48)
 	if err != nil {
 		return PairSuccess{}, err
@@ -244,6 +267,32 @@ func (s *Service) VerifyReconnect(deviceID, trustSecret string) (DeviceView, err
 	s.session.Status = "Connected"
 	go func() { _ = s.persist() }()
 	return toView(device), nil
+}
+
+// ConnectDevice marks an already-trusted device as connected (used when a
+// saved session is restored on startup).
+func (s *Service) ConnectDevice(deviceID string) bool {
+	s.mu.Lock()
+	device, ok := s.devices[deviceID]
+	if !ok {
+		s.mu.Unlock()
+		return false
+	}
+	device.Status = DeviceConnected
+	device.LastSeen = time.Now().UTC()
+	s.devices[deviceID] = device
+	s.session.Status = "Restored session"
+	s.mu.Unlock()
+	go func() { _ = s.persist() }()
+	return true
+}
+
+// ActiveDeviceID returns the id of the currently connected device, if any.
+func (s *Service) HasDevice(deviceID string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	_, ok := s.devices[deviceID]
+	return ok
 }
 
 func (s *Service) MarkDeviceOffline(deviceID string) {

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -131,6 +133,7 @@ func (a *App) Logout() error {
 		a.cloud.Logout()
 	}
 	a.stopWatch()
+	clearActiveSession()
 	a.refreshPairingInternal()
 	a.startRelayIfConfigured(a.ctx)
 	a.emitSnapshot()
@@ -176,8 +179,21 @@ func (a *App) ToggleFullscreen() {
 // refreshPairingInternal starts either a cloud session or the legacy local/relay one.
 func (a *App) refreshPairingInternal() {
 	a.stopWatch()
+	a.stopCam()
 
 	if a.cloudReadyAndLoggedIn() {
+		// Resume the previous pairing so a restarted desktop does not force
+		// the phone through QR approval again.
+		if saved := loadActiveSession(); saved != nil && a.pairing.HasDevice(saved.DeviceID) {
+			if err := a.pairing.StartCloudSessionWithRoom(saved.Room); err == nil {
+				if a.pairing.ConnectDevice(saved.DeviceID) {
+					a.markCamActive()
+					return
+				}
+			}
+			clearActiveSession()
+		}
+
 		code, err := a.pairing.StartCloudSession(a.hostLabel())
 		if err != nil {
 			runtime.LogErrorf(a.ctx, "cloud pairing session failed: %v", err)
@@ -190,6 +206,7 @@ func (a *App) refreshPairingInternal() {
 		return
 	}
 
+	clearActiveSession()
 	if err := a.pairing.StartSession(); err != nil && a.ctx != nil {
 		runtime.LogErrorf(a.ctx, "pairing session failed: %v", err)
 	}
@@ -238,10 +255,16 @@ func (a *App) watchCloudApprovals() {
 				continue
 			}
 			if _, err := a.pairing.VerifyPairing("", handshake); err != nil {
-				runtime.LogErrorf(a.ctx, "approved device rejected: %v", err)
+				if errors.Is(err, pairing.ErrDeviceLimit) {
+					runtime.LogWarningf(a.ctx, "pairing rejected: %v", err)
+					_ = a.cloud.UpdatePairingStatus(ctx, snapshot.Room, "full")
+				} else {
+					runtime.LogErrorf(a.ctx, "approved device rejected: %v", err)
+				}
 				continue
 			}
 			_ = a.cloud.ConsumePairingSession(context.Background(), snapshot.Room)
+			saveActiveSession(snapshot.Room, handshake.ID)
 			runtime.LogInfo(a.ctx, "device approved via discord account")
 			a.markCamActive()
 			a.stopWatch()
@@ -273,6 +296,59 @@ func (a *App) stopCam() {
 	a.camMu.Lock()
 	defer a.camMu.Unlock()
 	a.camActive = false
+}
+
+// --- persisted active pairing (survives exe restarts) -------------------
+
+type activePairing struct {
+	Room     string `json:"room"`
+	DeviceID string `json:"deviceId"`
+}
+
+func activeSessionPath() (string, error) {
+	base, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(base, "peeperphone")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "active-session.json"), nil
+}
+
+func loadActiveSession() *activePairing {
+	path, err := activeSessionPath()
+	if err != nil {
+		return nil
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var saved activePairing
+	if json.Unmarshal(raw, &saved) != nil || saved.Room == "" || saved.DeviceID == "" {
+		return nil
+	}
+	return &saved
+}
+
+func saveActiveSession(room, deviceID string) {
+	path, err := activeSessionPath()
+	if err != nil {
+		return
+	}
+	raw, err := json.Marshal(activePairing{Room: room, DeviceID: deviceID})
+	if err != nil {
+		return
+	}
+	_ = os.WriteFile(path, raw, 0o600)
+}
+
+func clearActiveSession() {
+	if path, err := activeSessionPath(); err == nil {
+		_ = os.Remove(path)
+	}
 }
 
 func (a *App) snapshot() Snapshot {

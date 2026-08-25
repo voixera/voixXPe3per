@@ -451,3 +451,13 @@ func (c *Client) ConsumePairingSession(ctx context.Context, code string) error {
 		nil,
 	)
 }
+
+// UpdatePairingStatus writes an arbitrary status (e.g. "full" when the
+// desktop hit its device cap) so the phone can react.
+func (c *Client) UpdatePairingStatus(ctx context.Context, code, status string) error {
+	return c.do(ctx, "PATCH",
+		"/rest/v1/pairing_sessions?code=eq."+queryEscape(code),
+		map[string]interface{}{"status": status},
+		nil,
+	)
+}
