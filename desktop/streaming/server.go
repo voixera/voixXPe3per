@@ -187,6 +187,12 @@ func (s *Server) SetKeyframeRequester(request func()) {
 	s.requestKeyframe = request
 }
 
+// ActivateDevice marks a paired device active without a socket handshake
+// (cloud approval / resumed session paths never pass through handleText).
+func (s *Server) ActivateDevice(deviceID string) {
+	s.activateDevice(deviceID)
+}
+
 func (s *Server) HandlePeerText(sendJSON func(any) error, payload []byte, currentDeviceID string) string {
 	return s.handleText(sendJSON, payload, currentDeviceID)
 }

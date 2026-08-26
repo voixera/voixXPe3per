@@ -218,15 +218,16 @@ func (a *App) refreshPairingInternal() {
 	if a.cloudReadyAndLoggedIn() {
 		// Resume the previous pairing so a restarted desktop does not force
 		// the phone through QR approval again.
-		if saved := loadActiveSession(); saved != nil && a.pairing.HasDevice(saved.DeviceID) {
-			if err := a.pairing.StartCloudSessionWithRoom(saved.Room); err == nil {
-				if a.pairing.ConnectDevice(saved.DeviceID) {
-					a.startCamFeed(saved.Room)
-					return
+			if saved := loadActiveSession(); saved != nil && a.pairing.HasDevice(saved.DeviceID) {
+				if err := a.pairing.StartCloudSessionWithRoom(saved.Room); err == nil {
+					if a.pairing.ConnectDevice(saved.DeviceID) {
+						a.server.ActivateDevice(saved.DeviceID)
+						a.startCamFeed(saved.Room)
+						return
+					}
 				}
+				clearActiveSession()
 			}
-			clearActiveSession()
-		}
 
 		code, err := a.pairing.StartCloudSession(a.hostLabel())
 		if err != nil {
@@ -297,6 +298,7 @@ func (a *App) watchCloudApprovals() {
 				}
 				continue
 			}
+			a.server.ActivateDevice(handshake.ID)
 			_ = a.cloud.ConsumePairingSession(context.Background(), snapshot.Room)
 			saveActiveSession(snapshot.Room, handshake.ID)
 			runtime.LogInfo(a.ctx, "device approved via discord account")

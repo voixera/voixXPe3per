@@ -63,8 +63,11 @@ export function StreamStage({
   const { state, actions } = useAppState();
 
   const camFrame = state.camFrame;
-  const camExpected = state.camActive || !!camFrame;
-  const showBoth = !!frame && !!camFrame;
+  // Browser-paired phones can never send H264 screen frames — the camera
+  // pane owns the stage until a stream-capable device is active.
+  const camExpected = state.camActive || !!camFrame || !device.streamCapable;
+  const showScreen = device.streamCapable || !!frame;
+  const showBoth = showScreen && !!camFrame;
   const [debugOpen, setDebugOpen] = useState(false);
   const [stats, setStats] = useState<RendererStats>(renderer.stats);
 
@@ -155,48 +158,50 @@ export function StreamStage({
 
       <div className={`relative min-h-0 flex-1 ${showBoth ? "grid grid-cols-2 divide-x divide-line-mid" : ""}`}>
         {/* Screen recording pane (Android APK / iOS broadcast / H264) */}
-        <section className="relative bg-ink-950">
-          <canvas ref={canvasRef} className="h-full w-full" />
-          {!frame && (
-            <Spinner
-              line1={
-                device.status !== "connected"
-                  ? "No trusted device online"
-                  : streamState.state === "streaming"
-                    ? "Receiving frames…"
-                    : "Connected — awaiting screen frames"
-              }
-              line2={
-                device.platform === "ios"
-                  ? "iOS: start Screen Broadcast in Control Center"
-                  : "Start capture in the phone app"
-              }
-              hint={`state: ${screenStatus}`}
-            />
-          )}
-          {frame && <PaneBadge text="Screen" warn={!streaming} />}
-          {debugOpen && (
-            <div className="absolute bottom-4 left-4 z-10 border border-line-hi bg-ink-950/95 px-3 py-2 font-mono text-[10px] leading-relaxed tracking-[0.14em] text-dim">
-              <p className="text-bone">SCREEN DEBUG</p>
-              <p>
-                STATE: <b className={streaming ? "text-acid" : "text-amber"}>{STREAM_STATE_LABEL[streamState.state] ?? streamState.state.toUpperCase()}</b>
-              </p>
-              <p>DEV: {device.name} ({device.platform})</p>
-              <p>
-                FPS <b className="text-acid">{metrics.fps}</b> · FRAMES <b className="text-acid">{metrics.frames}</b> · LAT {metrics.latencyMs}ms
-              </p>
-              <p>
-                RES {stats.width > 0 ? `${stats.width}x${stats.height}` : metrics.resolution || "?"} · FMT {metrics.codec || "H264"}
-              </p>
-              <p>
-                LAST FRAME {stats.lastFrameAt > 0 ? `${Date.now() - stats.lastFrameAt}ms ago` : "never"} · AGE {streamState.lastFrameAgeMs}ms
-              </p>
-              <p>
-                DECODED <b className="text-acid">{stats.decoded}</b> · ERR {stats.decodeErrors} · DROP {stats.dropped}
-              </p>
-            </div>
-          )}
-        </section>
+        {showScreen && (
+          <section className="relative bg-ink-950">
+            <canvas ref={canvasRef} className="h-full w-full" />
+            {!frame && (
+              <Spinner
+                line1={
+                  device.status !== "connected"
+                    ? "No trusted device online"
+                    : streamState.state === "streaming"
+                      ? "Receiving frames…"
+                      : "Connected — awaiting screen frames"
+                }
+                line2={
+                  device.platform === "ios"
+                    ? "iOS: start Screen Broadcast in Control Center"
+                    : "Start capture in the phone app"
+                }
+                hint={`state: ${screenStatus}`}
+              />
+            )}
+            {frame && <PaneBadge text="Screen" warn={!streaming} />}
+            {debugOpen && (
+              <div className="absolute bottom-4 left-4 z-10 border border-line-hi bg-ink-950/95 px-3 py-2 font-mono text-[10px] leading-relaxed tracking-[0.14em] text-dim">
+                <p className="text-bone">SCREEN DEBUG</p>
+                <p>
+                  STATE: <b className={streaming ? "text-acid" : "text-amber"}>{STREAM_STATE_LABEL[streamState.state] ?? streamState.state.toUpperCase()}</b>
+                </p>
+                <p>DEV: {device.name} ({device.platform})</p>
+                <p>
+                  FPS <b className="text-acid">{metrics.fps}</b> · FRAMES <b className="text-acid">{metrics.frames}</b> · LAT {metrics.latencyMs}ms
+                </p>
+                <p>
+                  RES {stats.width > 0 ? `${stats.width}x${stats.height}` : metrics.resolution || "?"} · FMT {metrics.codec || "H264"}
+                </p>
+                <p>
+                  LAST FRAME {stats.lastFrameAt > 0 ? `${Date.now() - stats.lastFrameAt}ms ago` : "never"} · AGE {streamState.lastFrameAgeMs}ms
+                </p>
+                <p>
+                  DECODED <b className="text-acid">{stats.decoded}</b> · ERR {stats.decodeErrors} · DROP {stats.dropped}
+                </p>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Camera pane (phone browser / JPEG over Supabase) */}
         {camExpected && (
@@ -212,7 +217,16 @@ export function StreamStage({
               style={{ display: camFrame ? "block" : "none" }}
             />
             {!camFrame && (
-              <Spinner line1="Awaiting phone camera" line2={state.camFrames > 0 ? undefined : "Keep the pairing page open on the phone"} />
+              <Spinner
+                line1="Awaiting phone camera"
+                line2={
+                  device.platform === "web"
+                    ? state.camFrames > 0
+                      ? undefined
+                      : "Keep the pairing page open on the phone"
+                    : "Camera streams from the phone browser pairing page — open the QR link in Safari/Chrome"
+                }
+              />
             )}
             {!camFrame && state.camStatus && (
               <p className={`mt-2 font-mono text-[10px] ${state.camStatus === "SUBSCRIBED" ? "text-dim/70" : "text-amber"}`}>
