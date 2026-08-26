@@ -66,6 +66,10 @@ class MainActivity : AppCompatActivity() {
             text = "Reconnect Trusted Desktop"
             setOnClickListener { attemptReconnect(manual = true) }
         }
+        val captureButton = Button(this).apply {
+            text = "Start Screen Capture"
+            setOnClickListener { requestCapturePermission() }
+        }
         statusText = TextView(this).apply {
             text = "Status: waiting"
             textSize = 13f
@@ -78,6 +82,7 @@ class MainActivity : AppCompatActivity() {
         root.addView(subtitle)
         root.addView(scanButton)
         root.addView(reconnectButton)
+        root.addView(captureButton)
         root.addView(statusText)
         setContentView(root)
     }

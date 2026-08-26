@@ -3,6 +3,9 @@ import Foundation
 final class DesktopSocket {
     private let session = URLSession(configuration: .default)
     private var task: URLSessionWebSocketTask?
+    private var pingTimer: Timer?
+    // Events arriving after the handshake (e.g. stream.request_keyframe).
+    var onEvent: (([String: Any]) -> Void)?
 
     func pair(
         payload: PairingPayload,
@@ -14,6 +17,7 @@ final class DesktopSocket {
             let webSocket = session.webSocketTask(with: url)
             task = webSocket
             webSocket.resume()
+            startPing()
 
             if payload.mode == "relay" || payload.mode == "cloud" {
                 sendJSON(["type": "relay.join", "role": "ios", "room": payload.room], using: webSocket)
@@ -35,6 +39,7 @@ final class DesktopSocket {
             let webSocket = session.webSocketTask(with: url)
             task = webSocket
             webSocket.resume()
+            startPing()
 
             if trusted.mode == "relay" || trusted.mode == "cloud" {
                 sendJSON(["type": "relay.join", "role": "ios", "room": trusted.room], using: webSocket)
@@ -59,8 +64,34 @@ final class DesktopSocket {
     }
 
     func close() {
+        pingTimer?.invalidate()
+        pingTimer = nil
         task?.cancel(with: .normalClosure, reason: nil)
         task = nil
+    }
+
+    // Keepalive: relays drop idle sockets; a 20s ping keeps the broadcast
+    // extension's connection alive for long silent stretches.
+    private func startPing() {
+        pingTimer?.invalidate()
+        pingTimer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in
+            self?.task?.sendPing { _ in }
+        }
+    }
+
+    private func startReceiveLoop(using webSocket: URLSessionWebSocketTask) {
+        webSocket.receive { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .failure:
+                return
+            case .success(let message):
+                if let json = self.decode(message) {
+                    self.onEvent?(json)
+                }
+                self.startReceiveLoop(using: webSocket)
+            }
+        }
     }
 
     private func receivePairResult(
@@ -95,6 +126,8 @@ final class DesktopSocket {
                         deviceId: deviceId
                     )
                     completion(.success(PairResult(desktop: desktop, trustSecret: trustSecret)))
+                    // Keep the loop alive for post-pair control messages.
+                    startReceiveLoop(using: webSocket)
                 case "pair.failed", "error":
                     completion(.failure(PairingError.serverRejected(json["message"] as? String ?? "Pairing failed")))
                 default:
@@ -121,6 +154,8 @@ final class DesktopSocket {
                 switch json["type"] as? String {
                 case "reconnect.success":
                     completion(.success(()))
+                    // Keep reading: desktop may send stream.request_keyframe.
+                    startReceiveLoop(using: webSocket)
                 case "reconnect.failed", "error":
                     completion(.failure(PairingError.serverRejected(json["message"] as? String ?? "Reconnect failed")))
                 default:

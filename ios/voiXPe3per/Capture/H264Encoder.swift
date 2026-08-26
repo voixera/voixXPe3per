@@ -7,12 +7,15 @@ public final class H264Encoder {
     private let onEncoded: (Data, Bool) -> Void
     private var width: Int32 = 0
     private var height: Int32 = 0
+    // Benign race: set from socket thread, read on encode path; worst case the
+    // forced keyframe lands one frame later.
+    private var pendingKeyFrameRequest = false
 
     public init(onEncoded: @escaping (Data, Bool) -> Void) {
         self.onEncoded = onEncoded
     }
 
-    public func prepare(width: Int32, height: Int32, fps: Int32 = 60, bitrate: Int32 = 2_500_000) {
+    public func prepare(width: Int32, height: Int32, fps: Int32 = 60, bitrate: Int32 = 2_500_000) -> Bool {
         self.width = width
         self.height = height
         stop()
@@ -30,26 +33,39 @@ public final class H264Encoder {
             compressionSessionOut: &session
         )
 
-        guard status == noErr, let session else { return }
+        guard status == noErr, let session else { return false }
 
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_RealTime, value: kCFBooleanTrue)
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ProfileLevel, value: kVTProfileLevel_H264_Baseline_AutoLevel)
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_AverageBitRate, value: NSNumber(value: bitrate))
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_ExpectedFrameRate, value: NSNumber(value: fps))
         VTSessionSetProperty(session, key: kVTCompressionPropertyKey_MaxKeyFrameInterval, value: NSNumber(value: fps * 2))
-        VTCompressionSessionPrepareToEncodeFrames(session)
+        guard VTCompressionSessionPrepareToEncodeFrames(session) == noErr else {
+            stop()
+            return false
+        }
+        return true
+    }
+
+    public func requestKeyFrame() {
+        pendingKeyFrameRequest = true
     }
 
     public func encode(sampleBuffer: CMSampleBuffer) {
         guard let session, let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         let duration = CMSampleBufferGetDuration(sampleBuffer)
+        var frameProps: CFDictionary?
+        if pendingKeyFrameRequest {
+            frameProps = [kVTEncodeFrameOptionKey_ForceKeyFrame: true] as CFDictionary
+            pendingKeyFrameRequest = false
+        }
         VTCompressionSessionEncodeFrame(
             session,
             imageBuffer: imageBuffer,
             presentationTimeStamp: pts,
             duration: duration,
-            frameProperties: nil,
+            frameProperties: frameProps,
             sourceFrameRefcon: nil,
             infoFlagsOut: nil
         )
